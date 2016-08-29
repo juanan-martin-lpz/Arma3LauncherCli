@@ -1,0 +1,30 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="ActualizaBDD.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="carpeta_a2" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\Program Files (x86)\Steam\SteamApps\common\Arma 2 Operation Arrowhead</Value>
+    </Setting>
+    <Setting Name="parametros_a2" Type="System.String" Scope="User">
+      <Value Profile="(Default)">-nosplash -skipIntro </Value>
+    </Setting>
+    <Setting Name="carpeta_a3" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\Program Files (x86)\Steam\SteamApps\common\Arma 3</Value>
+    </Setting>
+    <Setting Name="parametros_a3" Type="System.String" Scope="User">
+      <Value Profile="(Default)">-nosplash -skipIntro </Value>
+    </Setting>
+    <Setting Name="ruta_ts" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\Program Files\TeamSpeak 3 Client\ts3client_win64.exe</Value>
+    </Setting>
+    <Setting Name="contraseña_servidores" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="mods_a2" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="mods_a3" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+  </Settings>
+</SettingsFile>
