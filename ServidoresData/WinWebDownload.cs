@@ -25,7 +25,7 @@ namespace ServidoresData
         }
     }
 
-    public class WebDownload : INotifyPropertyChanged
+    public class WinWebDownload : INotifyPropertyChanged, IWebDownload
     {
         WebClient webClient;
         public Stopwatch sw;
@@ -46,13 +46,13 @@ namespace ServidoresData
 
         static AutoResetEvent block = new AutoResetEvent(true);
 
-        public WebDownload()
+        public WinWebDownload()
         {
             sw = new Stopwatch();
             _progress = 0;
         }
 
-        public WebDownload(string Srv,string Repo, string FName, string target)
+        public WinWebDownload(string Srv,string Repo, string FName, string target)
         {
             sw = new Stopwatch();
             _progress = 0;

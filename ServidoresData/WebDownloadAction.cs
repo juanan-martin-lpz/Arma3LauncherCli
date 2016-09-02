@@ -14,7 +14,7 @@ namespace ServidoresData
         private string filetodownload;
         private string filetocreate;
 
-        private WebDownload wd;
+        private WinWebDownload wd;
 
         IProgress<int> prg;
 
@@ -24,7 +24,7 @@ namespace ServidoresData
             filetodownload = file;
             filetocreate = destination;
 
-            wd = new WebDownload();
+            wd = new WinWebDownload();
 
             wd.DownloadProgressChanged += new DownloadProgressChangedEventHandler(OnProgressChanged);
             wd.DownloadFileCompleted += new AsyncCompletedEventHandler(OnCompleted);

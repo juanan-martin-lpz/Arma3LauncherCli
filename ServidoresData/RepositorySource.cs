@@ -41,7 +41,7 @@ namespace ServidoresData
 
         public void Connect()
         {
-            WebDownload dl = new WebDownload();
+            WinWebDownload dl = new WinWebDownload();
             dl.DownloadFile(webrepository, @"/servidores2.txt", servidores_path.Parent.FullName + @"\Servidores2.txt");
             readServidores();
         }
@@ -50,7 +50,7 @@ namespace ServidoresData
         {
             string nombre_bdd = Path.GetTempPath() + "ficheros_" + DateTime.Now.Ticks + ".db4o";
 
-            WebDownload dl = new WebDownload();
+            WinWebDownload dl = new WinWebDownload();
             dl.DownloadFile(webrepository, repo + @"/ficheros.db4o", nombre_bdd);
 
             return nombre_bdd;

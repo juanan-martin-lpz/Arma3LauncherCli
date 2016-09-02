@@ -13,7 +13,7 @@ namespace ServidoresData
 {
     public class DownloadFileCommand : CommandBase
     {
-        WebDownload wd;
+        WinWebDownload wd;
 
         
         public CommandCompletedEventHandler DownloadFileCommandCompleted;
@@ -22,7 +22,7 @@ namespace ServidoresData
 
         public DownloadFileCommand(string Server, string Repo, string Filename, string Target, IProgress<int> p) : base(p)
         {
-            wd = new WebDownload(Server, Repo, Filename, Target);
+            wd = new WinWebDownload(Server, Repo, Filename, Target);
             wd.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadCompleted);
             wd.DownloadProgressChanged += new DownloadProgressChangedEventHandler(ProgressChanged);
             wd.WebDownloadProgressChanged += new ProgressChangedEventHandler(OnWebDownloadProgressChange);

@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ActualizaBDD</RootNamespace>
     <AssemblyName>12bdi_launcher</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -67,10 +67,10 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>C03C5C1E14ADF368BB21FDC89697B999D1CF26D4</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>AB86ABAD422970329458405685094E280396AD48</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>12bdi_launcher_2_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>12bdi_launcher_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <TargetZone>LocalIntranet</TargetZone>
@@ -235,6 +235,7 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="12bdi_launcher_2_TemporaryKey.pfx" />
+    <None Include="12bdi_launcher_TemporaryKey.pfx" />
     <None Include="app.config" />
     <Content Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
