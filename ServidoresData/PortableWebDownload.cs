@@ -29,8 +29,9 @@ namespace ServidoresData
         private string _repo;
         private string _target;
 
+        int bufferLength = 1024 * 1024;
 
-        bool canDownload;
+        bool canDownload = true;
 
         
         DownloadAsyncProgressChangedEventArgs e;
@@ -93,9 +94,33 @@ namespace ServidoresData
             throw new NotImplementedException();
         }
 
-        public void DownloadAsync()
+        public async void DownloadAsync()
         {
-            throw new NotImplementedException();
+            string urlAddress = _server + "/" + _repo + "/" + _fname;
+
+            Uri URL = urlAddress.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ? new Uri(urlAddress) : new Uri("http://" + urlAddress);
+
+            Action<decimal, decimal, decimal> onProgress = setDownloadProgress;
+            Action onFinish = setDownloadFinished;
+
+            using (HttpClient client = new HttpClient())
+            {
+                byte[] buffer;
+
+                FileStream file = new FileStream(_target, FileMode.Create);
+
+                int pos = 0;
+
+                while (canDownload)
+                {
+                    buffer = await client.GetByteArrayAsyncWithProgress(URL.ToString(), onProgress, onFinish);
+
+                    await file.WriteAsync(buffer, pos, buffer.Length);
+
+                    pos += BufferSize;
+
+                }
+            }
         }
 
         public void DownloadFile(string urlAddress, string repodb, string location)
@@ -120,7 +145,7 @@ namespace ServidoresData
 
         protected void setDownloadFinished()
         {
-            FileStream file = new FileStream(location, FileMode.Create);
+            canDownload = false;
         }
 
         protected void setDownloadProgress(decimal BytesReaded, decimal TotalBytes, decimal Percentage)
