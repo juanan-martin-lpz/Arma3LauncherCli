@@ -27,7 +27,9 @@ namespace ServidoresData
 
         StatusInfo status;
         string publishedat;
-        
+
+        ServerConfig _config;
+
         ObservableCollection<Mod> modlist;
 
         public Servidor(/* ServerConfig config */)
@@ -248,11 +250,63 @@ namespace ServidoresData
             return s;
         }
 
+
+        public ServerConfig Config
+        {
+            get { return _config;}
+            set
+            { if ((value != null) && (value != _config))
+                {
+                    _config = value;
+                }    
+            }
+        }
+
         public void Start()
         {
-        	
+
+            if (_config == null)
+            {
+                throw new Exception("No existe configuracion para el lanzamiento");
+            }
+
+            string executable = _config.Path + @"\" + "arma3server.exe";
+            string srvcfg = @" -ServerCfg" + _config.ServerConfigFile + @" -ServerBasic=" + _config.ConfigFile;
+            string profile = @" -Profile=" + _config.ProfileFile;
+            string mods = @" -mod=" + ModListToString();
+
+            string parametros = srvcfg + profile + mods;
+
+            System.Diagnostics.Process p = new System.Diagnostics.Process();
+            System.Diagnostics.ProcessStartInfo info = new System.Diagnostics.ProcessStartInfo(executable);
+            info.UseShellExecute = true;
+
+            info.RedirectStandardError = true;
+            
+            info.Arguments = parametros;
+            //info.WorkingDirectory = dir_trabajo;
+
+            // black
+            //
+            //p.EnableRaisingEvents = true;
+            //p.Exited += new EventHandler(Utiles.arma_Exited);
+            //
+            p.StartInfo = info;
+            //while (!p.Start()) ; // mio
+
+            
+            p.Start();
+
+            int pid = p.Id;
+            // Guardamos la info en una carpeta, al estilo Linux. El nombre de la carpeta es el pid
+            // Dentro guardamos un archivo con informacion acerca del lanzamiento -> launch_object
+            // Otro archivo con datos de telemetria (memoria,etc..) actualizable por timer+evento -> telemetry
+            // La carpeta y el contenido es eliminado en el Stop
+             
+            p.WaitForExit();
+
         }
-      
+
         public void Stop()
         {
         	
