@@ -130,6 +130,7 @@
     <Compile Include="RepositorySource.cs" />
     <Compile Include="ServerConfig.cs" />
     <Compile Include="Servidor.cs" />
+    <Compile Include="ServidoresBay.cs" />
     <Compile Include="WinWebDownload.cs" />
     <Compile Include="WebDownloadAction.cs" />
   </ItemGroup>
