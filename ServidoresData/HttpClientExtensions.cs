@@ -11,6 +11,8 @@ namespace ServidoresData
     {
         public static async Task<byte[]> GetByteArrayAsyncWithProgress(this HttpClient client, string requestUri, Action<decimal, decimal, decimal> onProgress, Action onFinish)
         {
+            // Quizas Task<Tuple<int,byte[]>> y retornamos bytes leidos y el buffer
+
             List<byte> result = new List<byte>();
             byte[] buffer;
             int bufferLength = 1024 * 1024; // 1MB
@@ -34,12 +36,21 @@ namespace ServidoresData
 
             using (var response = await client.GetAsync(requestUri))
             {
+                // Suponemos que uno de estos errores es retornado si la Uri no se encuentra, aparte del contenido del not found
+                if ((response.StatusCode == System.Net.HttpStatusCode.Forbidden) || (response.StatusCode == System.Net.HttpStatusCode.NotFound))
+                {
+                    // Retornamos array con longitud cero o Tuple<int,byte[]>(0,null)
+                }
+
+
+                // El recurso existe, lo leemos
                 using (var stream = await response.Content.ReadAsStreamAsync())
                 {
                     long bytesTotal = 0L;
                     try
                     {
-                        if (stream.CanSeek)
+                        // Longitud del recurso
+                       if (stream.CanSeek)
                             bytesTotal = stream.Length;
                         else
                         {
@@ -75,11 +86,13 @@ namespace ServidoresData
                         }
                         else
                         {
-                            onFinish();
                             break;
                         }
                             
                     }
+
+                    // Aqui ya hemos terminado
+                    onFinish();
                 }
             }
 
