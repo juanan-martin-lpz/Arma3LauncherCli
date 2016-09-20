@@ -16,6 +16,9 @@ namespace ServidoresData
             int bufferLength = 1024 * 1024; // 1MB
             var bytesRead = 0L;
             var megaBytesTotal = 0M;
+
+            string statusCode;
+
             Func<long, long, decimal> percent = (read, total) =>
             {
                 if (total == 0L)
@@ -52,6 +55,7 @@ namespace ServidoresData
                     }
                     catch (Exception)
                     {
+                        throw;
                     }
 
                     while (stream.CanRead)

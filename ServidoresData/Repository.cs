@@ -176,9 +176,67 @@ namespace ServidoresData
         public Repository(string folder, RepositoryBay Bay, string Repo, List<ModView> Modlist)
         {
 
+            Console.WriteLine("Paso 1");
+
             FileTarget target = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
             string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + System.DateTime.Now.ToShortDateString() + ".txt";
             target.FileName = filename;
+
+            Console.WriteLine("Paso 2");
+
+            basepath = folder;
+            bay = Bay;
+            nombre = Repo;
+            basedir = new DirectoryInfo(basepath);
+
+            Console.WriteLine("Paso 3");
+
+            modlist = new ObservableCollection<Mod>();
+            _serverMods = Modlist;
+            //CatalogFolderAsync(Bay,Repo);
+
+            Console.WriteLine("Paso 4");
+
+            DirectoryInfo baydir = bay.GetDirectoryForRepo(nombre);
+
+            if (!baydir.Exists)
+            {
+                baydir.Create();
+            }
+
+            string dbfile = Path.Combine(bay.ToDirectoryInfo().FullName, nombre, "ficheros.db4o");
+
+            try
+            {
+                logger.Info("Se va a defragmentar la base de datos");
+                db4oDB.Defragment(dbfile, dbfile + ".backup");
+                logger.Info("Base de datos defragmentada con exito");
+            }
+            catch (Exception ex1)
+            {
+                logger.Fatal("Excepcion al defragmentar la base de datos : {0}", ex1.Message);
+                //throw ex1;
+            }
+
+            try
+            {
+                dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
+                dcliente.Open();
+                dcliente.ReadDB();
+            }
+            catch (Exception ex2)
+            {
+                logger.Fatal("Excepcion al abrir la base de datos : {0}", ex2.Message);
+
+                throw;
+            }
+
+        }
+
+        public Repository(string folder, RepositoryBay Bay, string Repo)
+        {
+
+            Console.WriteLine("Paso 1");
 
 
             basepath = folder;
@@ -186,9 +244,7 @@ namespace ServidoresData
             nombre = Repo;
             basedir = new DirectoryInfo(basepath);
 
-            modlist = new ObservableCollection<Mod>();
-            _serverMods = Modlist;
-            //CatalogFolderAsync(Bay,Repo);
+            Console.WriteLine("Paso 2");
 
             DirectoryInfo baydir = bay.GetDirectoryForRepo(nombre);
 

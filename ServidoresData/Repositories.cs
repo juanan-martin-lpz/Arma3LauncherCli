@@ -41,7 +41,7 @@ namespace ServidoresData
             foreach (DirectoryInfo r in allRepos)
             {
                 Console.WriteLine(r.FullName);
-                Repository re = new Repository(r.FullName, bay, r.Name, null);
+                Repository re = new Repository(r.FullName, bay, r.Name);
                 Console.WriteLine(re.Nombre);
 
                 repositoryList.Add(r.Name,re);                

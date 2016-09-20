@@ -67,10 +67,10 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>AB86ABAD422970329458405685094E280396AD48</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>3D03D64224DB0C7117A8ABBCF8224110684EA4DE</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>12bdi_launcher_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>12bdi_launcher_3_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <TargetZone>LocalIntranet</TargetZone>
@@ -235,6 +235,7 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="12bdi_launcher_2_TemporaryKey.pfx" />
+    <None Include="12bdi_launcher_3_TemporaryKey.pfx" />
     <None Include="12bdi_launcher_TemporaryKey.pfx" />
     <None Include="app.config" />
     <Content Include="NLog.config">

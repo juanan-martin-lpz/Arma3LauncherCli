@@ -15,7 +15,7 @@ using System.Net.Http;
 namespace ServidoresData
 {
 
-    class PortableWebDownload : IWebDownload
+    public class PortableWebDownload : IWebDownload
     {
         public const int BufferSize = 0x2000;
 
@@ -103,22 +103,48 @@ namespace ServidoresData
             Action<decimal, decimal, decimal> onProgress = setDownloadProgress;
             Action onFinish = setDownloadFinished;
 
+            Console.WriteLine("Preparando descarga...");
+
             using (HttpClient client = new HttpClient())
             {
                 byte[] buffer;
 
                 FileStream file = new FileStream(_target, FileMode.Create);
 
-                int pos = 0;
+                int pos = 1;
 
-                while (canDownload)
+                Console.WriteLine("Creado el FileStream....");
+
+                canDownload = true;
+
+                try
                 {
-                    buffer = await client.GetByteArrayAsyncWithProgress(URL.ToString(), onProgress, onFinish);
 
-                    await file.WriteAsync(buffer, pos, buffer.Length);
+                    while (canDownload)
+                    {
 
-                    pos += BufferSize;
+                        Console.WriteLine("Leyendo....");
 
+                        buffer = await client.GetByteArrayAsyncWithProgress(URL.ToString(), onProgress, onFinish);
+
+                        Console.WriteLine("Leidos {0} bytes", buffer.Length);
+
+                        canDownload = (buffer.Length == 0) ? false : true;
+
+                        await file.WriteAsync(buffer, 0, buffer.Length);
+
+                        pos += buffer.Length;
+
+                        Console.WriteLine("Escritos {0} bytes en {1}", buffer.Length, _target);
+
+                    }
+
+                    file.Close();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Ha ocurrido un error al leer el fichero {0} : {1} ", _fname, ex.Message);
+                    throw;
                 }
             }
         }
@@ -145,7 +171,7 @@ namespace ServidoresData
 
         protected void setDownloadFinished()
         {
-            canDownload = false;
+            //canDownload = false;
         }
 
         protected void setDownloadProgress(decimal BytesReaded, decimal TotalBytes, decimal Percentage)
