@@ -123,6 +123,7 @@
     <Compile Include="ModFile.cs" />
     <Compile Include="PortableWebDownload.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PWDProgressChangedEventArgs.cs" />
     <Compile Include="Repositories.cs" />
     <Compile Include="Repository.cs" />
     <Compile Include="RepositoryBay.cs" />
@@ -130,8 +131,9 @@
     <Compile Include="RepositorySource.cs" />
     <Compile Include="ServerConfig.cs" />
     <Compile Include="Servidor.cs" />
-    <Compile Include="WinWebDownload.cs" />
+    <Compile Include="ServidoresBay.cs" />
     <Compile Include="WebDownloadAction.cs" />
+    <Compile Include="WinWebDownload.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

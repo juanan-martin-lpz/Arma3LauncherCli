@@ -76,7 +76,6 @@ namespace ActualizaBDD
 
         private void Window_Loaded_1(object sender, RoutedEventArgs e)
         {
-
             // Versión
             this.Title = "12BDI Lanzador V. ";
 
@@ -765,7 +764,7 @@ namespace ActualizaBDD
             logger.Info("Iniciando el proceso de Comparacion");
 
             cliente.CompareCatalogs(db_name, serv.Repository, source.Address);
-
+            
 
         }
 
@@ -819,6 +818,7 @@ namespace ActualizaBDD
                 //Estado.Content = "Ejecutando Tarea";
                     SubEstado.Content = e.Message;
                     progreso.Value = e.ProgressPercentage;
+                    
                 }));
             }
             catch (Exception ex)

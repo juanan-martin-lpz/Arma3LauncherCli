@@ -38,8 +38,10 @@ namespace ServidoresData
 
         bool canDownload;
 
+        
+
         public event AsyncCompletedEventHandler DownloadFileCompleted;
-        public event DownloadProgressChangedEventHandler DownloadProgressChanged;
+        public event PortableDownloadProgressChangedEventHandler DownloadProgressChanged;
         public event ProgressChangedEventHandler WebDownloadProgressChanged;
 
         DownloadAsyncProgressChangedEventArgs e;
@@ -62,6 +64,8 @@ namespace ServidoresData
             _target = target;
 
             canDownload = true;
+
+            
         }
 
         public string Filename

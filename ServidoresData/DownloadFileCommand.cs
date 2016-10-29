@@ -13,18 +13,17 @@ namespace ServidoresData
 {
     public class DownloadFileCommand : CommandBase
     {
-        WinWebDownload wd;
+        PortableWebDownload wd;
 
-        
         public CommandCompletedEventHandler DownloadFileCommandCompleted;
         
         public event CommandBeforeExecuteEventHandler DownloadFileBeforeExecute;
 
         public DownloadFileCommand(string Server, string Repo, string Filename, string Target, IProgress<int> p) : base(p)
         {
-            wd = new WinWebDownload(Server, Repo, Filename, Target);
+            wd = new PortableWebDownload(Server, Repo, Filename, Target);
             wd.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadCompleted);
-            wd.DownloadProgressChanged += new DownloadProgressChangedEventHandler(ProgressChanged);
+            wd.DownloadProgressChanged += new PortableDownloadProgressChangedEventHandler(ProgressChanged);
             wd.WebDownloadProgressChanged += new ProgressChangedEventHandler(OnWebDownloadProgressChange);
 
 
@@ -46,22 +45,22 @@ namespace ServidoresData
             //sem.Wait();
 
             wd.DownloadAsync();
+            
         }
 
         
-        private void ProgressChanged(object sender, DownloadProgressChangedEventArgs e)
+        private void ProgressChanged(object sender, PWDProgressChangedEventArgs e)
         {
             
             IProgress<int> prg = (IProgress<int>)_prg;
 
             
-            prg.Report(e.ProgressPercentage);
+            prg.Report(e.Percentage);
         }
 
         private void DownloadCompleted(object sender, AsyncCompletedEventArgs e)
         {
             //sem.Release();
-
             completedargs.Message = wd.Filename + @" descargado con exito";
             OnDownloadFileCommandCompleted();
         }

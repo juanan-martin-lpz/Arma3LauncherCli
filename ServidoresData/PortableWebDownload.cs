@@ -15,7 +15,8 @@ using System.Net.Http;
 namespace ServidoresData
 {
 
-    class PortableWebDownload : IWebDownload
+    
+    public class PortableWebDownload : IWebDownload
     {
         public const int BufferSize = 0x2000;
 
@@ -33,13 +34,15 @@ namespace ServidoresData
 
         bool canDownload = true;
 
-        
-        DownloadAsyncProgressChangedEventArgs e;
+        static SemaphoreSlim sem;
 
-        static AutoResetEvent block = new AutoResetEvent(true);
+        //DownloadAsyncProgressChangedEventArgs e;
+        public event PortableDownloadProgressChangedEventHandler DownloadProgressChanged;
+        public PWDProgressChangedEventArgs ev;
+
 
         public event AsyncCompletedEventHandler DownloadFileCompleted;
-        public event DownloadProgressChangedEventHandler DownloadProgressChanged;
+        //public event DownloadProgressChangedEventHandler WDownloadProgressChanged;
         public event PropertyChangedEventHandler PropertyChanged;
         public event ProgressChangedEventHandler WebDownloadProgressChanged;
 
@@ -59,6 +62,8 @@ namespace ServidoresData
             _target = target;
 
             canDownload = true;
+
+            sem = new SemaphoreSlim(6);
         }
 
         public string Filename
@@ -94,32 +99,76 @@ namespace ServidoresData
             throw new NotImplementedException();
         }
 
+
         public async void DownloadAsync()
         {
             string urlAddress = _server + "/" + _repo + "/" + _fname;
 
             Uri URL = urlAddress.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ? new Uri(urlAddress) : new Uri("http://" + urlAddress);
 
-            Action<decimal, decimal, decimal> onProgress = setDownloadProgress;
+            Action<int, int, int> onProgress = setDownloadProgress;
             Action onFinish = setDownloadFinished;
+
+            sem.Wait();
+
+            Console.WriteLine("Preparando descarga...");
+
+            FileInfo fi = new FileInfo(_target);
+
+            DirectoryInfo di = new DirectoryInfo(fi.DirectoryName);
+
+            if (!di.Exists)
+            {
+                di.Create();
+            }
 
             using (HttpClient client = new HttpClient())
             {
-                byte[] buffer;
-
                 FileStream file = new FileStream(_target, FileMode.Create);
 
-                int pos = 0;
+                int pos = 1;
 
-                while (canDownload)
+                Console.WriteLine("Creado el FileStream....");
+
+                canDownload = true;
+                try
                 {
-                    buffer = await client.GetByteArrayAsyncWithProgress(URL.ToString(), onProgress, onFinish);
+                    while (canDownload)
+                    {
 
-                    await file.WriteAsync(buffer, pos, buffer.Length);
+                        Console.WriteLine("Leyendo....");
 
-                    pos += BufferSize;
+                        Tuple<long, byte[]> result;
 
+                        result = await client.GetByteArrayAsyncWithProgress(URL.ToString(), onProgress, onFinish);
+
+                        Console.WriteLine("Leidos {0} bytes", result.Item1);
+
+                        //canDownload = (result.Item1 == 0) ? false : true;
+
+                        await file.WriteAsync(result.Item2, 0, (int) result.Item1);
+
+                        pos += (int)result.Item1;
+
+                        Console.WriteLine("Escritos {0} bytes en {1}", result.Item1, _target);
+
+                    }
+
+                    file.Close();
+                    
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Ha ocurrido un error al leer el fichero {0} : {1} ", _fname, ex.Message);
+
+                    file.Close();
+
+                    fi.Delete();
+
+                    setDownloadFinished();
+                    //throw;
+                }
+
             }
         }
 
@@ -132,7 +181,7 @@ namespace ServidoresData
         {
             string url = urlAddress + @"/" + repodb + @"/" + location;
 
-            Action<decimal, decimal, decimal> onProgress = setDownloadProgress;
+            Action<int, int, int> onProgress = setDownloadProgress;
             Action onFinish = setDownloadFinished;
 
             using (HttpClient client = new HttpClient())
@@ -146,10 +195,42 @@ namespace ServidoresData
         protected void setDownloadFinished()
         {
             canDownload = false;
+
+            Console.WriteLine("Se ha finalizado la descarga del archivo {0}", _fname);
+
+            AsyncCompletedEventArgs e = new AsyncCompletedEventArgs(null, false, this);
+
+            if (DownloadFileCompleted != null)
+            {
+                DownloadFileCompleted(this, e);
+            }
+
+            sem.Release();
+
         }
 
-        protected void setDownloadProgress(decimal BytesReaded, decimal TotalBytes, decimal Percentage)
+        
+        
+        protected void setDownloadProgress(int BytesReaded, int TotalBytes, int Percentage)
         {
+
+            // Elevar el evento al UI
+
+            if (ev == null)
+            {
+                ev = new PWDProgressChangedEventArgs();
+            }
+
+            ev.BytesReaded = BytesReaded;
+            ev.TotalBytes = TotalBytes;
+            ev.Percentage = Percentage;
+
+            if (DownloadProgressChanged != null)
+            {
+                DownloadProgressChanged(this, ev);
+            }
+            //
+            Console.WriteLine("Progreso de la descarga : {0} ({1}/{2})", _fname,Percentage,BytesReaded,TotalBytes);
 
         }
     }

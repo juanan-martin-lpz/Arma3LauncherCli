@@ -3,6 +3,8 @@ using System.Net;
 
 namespace ServidoresData
 {
+    public delegate void PortableDownloadProgressChangedEventHandler(object sender, PWDProgressChangedEventArgs e);
+
     public interface IWebDownload
     {
         string Filename { get; set; }
@@ -12,7 +14,7 @@ namespace ServidoresData
         string Target { get; set; }
 
         event AsyncCompletedEventHandler DownloadFileCompleted;
-        event DownloadProgressChangedEventHandler DownloadProgressChanged;
+        event PortableDownloadProgressChangedEventHandler DownloadProgressChanged;
         event PropertyChangedEventHandler PropertyChanged;
         event ProgressChangedEventHandler WebDownloadProgressChanged;
 

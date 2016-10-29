@@ -14,8 +14,9 @@ namespace ServidoresData
         private string filetodownload;
         private string filetocreate;
 
-        private WinWebDownload wd;
+        //private WinWebDownload wd;
 
+        private PortableWebDownload wd;
         IProgress<int> prg;
 
         public WebDownloadAction(string URL, string file, string destination)
@@ -24,9 +25,9 @@ namespace ServidoresData
             filetodownload = file;
             filetocreate = destination;
 
-            wd = new WinWebDownload();
+            wd = new PortableWebDownload();
 
-            wd.DownloadProgressChanged += new DownloadProgressChangedEventHandler(OnProgressChanged);
+            wd.DownloadProgressChanged += new PortableDownloadProgressChangedEventHandler(OnProgressChanged);
             wd.DownloadFileCompleted += new AsyncCompletedEventHandler(OnCompleted);
 
         }
@@ -43,9 +44,10 @@ namespace ServidoresData
             wd.DownloadFile(repo, filetodownload, filetocreate);
         }
 
-        private void OnProgressChanged(object sender, DownloadProgressChangedEventArgs e)
+        private void OnProgressChanged(object sender, PWDProgressChangedEventArgs e)
         {
-            prg.Report(e.ProgressPercentage);            
+
+            prg.Report(e.Percentage);            
         }
 
 

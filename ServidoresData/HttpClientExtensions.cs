@@ -9,25 +9,28 @@ namespace ServidoresData
 {
     public static class HttpClientExtensions
     {
-        public static async Task<byte[]> GetByteArrayAsyncWithProgress(this HttpClient client, string requestUri, Action<decimal, decimal, decimal> onProgress, Action onFinish)
+
+        public static async Task<Tuple<long, byte[]>> GetByteArrayAsyncWithProgress(this HttpClient client, string requestUri, Action<int, int, int> onProgress, Action onFinish)
         {
-            // Quizas Task<Tuple<int,byte[]>> y retornamos bytes leidos y el buffer
 
             List<byte> result = new List<byte>();
             byte[] buffer;
             int bufferLength = 1024 * 1024; // 1MB
-            var bytesRead = 0L;
-            var megaBytesTotal = 0M;
-            Func<long, long, decimal> percent = (read, total) =>
-            {
-                if (total == 0L)
-                    return 0M;
+            var bytesRead = 0;
+            var megaBytesTotal = 0;
 
-                return (decimal)read / (decimal)total;
-            };
-            Func<long, decimal> megaBytes = (byteLength) =>
+            string statusCode;
+
+            Func<int, int, int> percent = (read, total) =>
             {
-                var mb = byteLength / 1024M / 1024M;
+                if (total == 0)
+                    return 0;
+
+                return (read * 100) / total;
+            };
+            Func<int, int> megaBytes = (byteLength) =>
+            {
+                var mb = byteLength / 1024 / 1024;
                 return mb;
             };
 
@@ -37,25 +40,26 @@ namespace ServidoresData
                 if ((response.StatusCode == System.Net.HttpStatusCode.Forbidden) || (response.StatusCode == System.Net.HttpStatusCode.NotFound))
                 {
                     // Retornamos array con longitud cero o Tuple<int,byte[]>(0,null)
+                    return new Tuple<long, byte[]>(0L, null);
                 }
 
 
                 // El recurso existe, lo leemos
                 using (var stream = await response.Content.ReadAsStreamAsync())
                 {
-                    long bytesTotal = 0L;
+                    int bytesTotal = 0;
                     try
                     {
                         // Longitud del recurso
                        if (stream.CanSeek)
-                            bytesTotal = stream.Length;
+                            bytesTotal = (int) stream.Length;
                         else
                         {
                             IEnumerable<string> contentLengthValues;
                             if (response.Headers.TryGetValues("Content-Length", out contentLengthValues))
                             {
-                                if (!long.TryParse(contentLengthValues.First(), out bytesTotal))
-                                    bytesTotal = 0L;
+                                if (!int.TryParse(contentLengthValues.First(), out bytesTotal))
+                                    bytesTotal = 0;
                             }
                         }
 
@@ -63,6 +67,7 @@ namespace ServidoresData
                     }
                     catch (Exception)
                     {
+                        throw;
                     }
 
                     while (stream.CanRead)
@@ -70,6 +75,7 @@ namespace ServidoresData
                         buffer = new byte[bufferLength];
                         // web streams aren't seekable, so the offset is always 0
                         var read = await stream.ReadAsync(buffer, 0, bufferLength);
+
                         if (read > 0)
                         {
                             if (read == bufferLength)
@@ -78,13 +84,12 @@ namespace ServidoresData
                                 result.AddRange(buffer.Take(read));
 
                             bytesRead += read;
-                            onProgress(megaBytes(bytesRead), megaBytesTotal, percent(bytesRead, bytesTotal));
+                            onProgress(bytesRead, megaBytesTotal, percent(bytesRead, bytesTotal));
                         }
                         else
                         {
                             break;
                         }
-                            
                     }
 
                     // Aqui ya hemos terminado
@@ -97,7 +102,7 @@ namespace ServidoresData
             buffer = null;
             percent = null;
 
-            return responseBytes;
+            return new Tuple<long, byte[]>(bytesRead,responseBytes);
         }
     }
 }
