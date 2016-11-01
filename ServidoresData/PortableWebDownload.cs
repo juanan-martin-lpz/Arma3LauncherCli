@@ -16,7 +16,7 @@ namespace ServidoresData
 {
 
     
-    public class PortableWebDownload : IWebDownload
+    public class PortableWebDownload    // : IWebDownload
     {
         public const int BufferSize = 0x2000;
 
@@ -37,14 +37,20 @@ namespace ServidoresData
         static SemaphoreSlim sem;
 
         //DownloadAsyncProgressChangedEventArgs e;
-        public event PortableDownloadProgressChangedEventHandler DownloadProgressChanged;
+        //public event PortableDownloadProgressChangedEventHandler DownloadProgressChanged;
+        public event ProgressChangedEventHandler DownloadProgressChanged;
         public PWDProgressChangedEventArgs ev;
+
 
 
         public event AsyncCompletedEventHandler DownloadFileCompleted;
         //public event DownloadProgressChangedEventHandler WDownloadProgressChanged;
         public event PropertyChangedEventHandler PropertyChanged;
         public event ProgressChangedEventHandler WebDownloadProgressChanged;
+
+        HttpDownload dw;
+
+        Tuple<long, byte[]> result;
 
         public PortableWebDownload()
         {
@@ -106,10 +112,10 @@ namespace ServidoresData
 
             Uri URL = urlAddress.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ? new Uri(urlAddress) : new Uri("http://" + urlAddress);
 
-            Action<int, int, int> onProgress = setDownloadProgress;
-            Action onFinish = setDownloadFinished;
+            //Action<int, int, int> onProgress = setDownloadProgress;
+            //Action onFinish = setDownloadFinished;
 
-            sem.Wait();
+            await sem.WaitAsync();
 
             Console.WriteLine("Preparando descarga...");
 
@@ -122,8 +128,23 @@ namespace ServidoresData
                 di.Create();
             }
 
+            try
+            {
+                dw = new HttpDownload(URL.ToString());
+                dw.OnDownloadProgress += new HttpDownload.DownloadProgress(downloadProgress);
+                dw.OnDownloadFinished += new HttpDownload.DownloadFinished(downloadFinished);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Ha ocurrido un error al descargar el fichero {0} : {1} ", _fname, ex.Message);
+            }
+
+            
+
             using (HttpClient client = new HttpClient())
             {
+                Console.WriteLine("Threads libres : {0}", 6 - sem.CurrentCount);
+
                 FileStream file = new FileStream(_target, FileMode.Create);
 
                 int pos = 1;
@@ -131,16 +152,16 @@ namespace ServidoresData
                 Console.WriteLine("Creado el FileStream....");
 
                 canDownload = true;
+
                 try
                 {
                     while (canDownload)
                     {
 
-                        Console.WriteLine("Leyendo....");
+                        Console.WriteLine("Esperando respuesta de servidor");
 
-                        Tuple<long, byte[]> result;
+                        result = await dw.GetByteArrayAsync();
 
-                        result = await client.GetByteArrayAsyncWithProgress(URL.ToString(), onProgress, onFinish);
 
                         Console.WriteLine("Leidos {0} bytes", result.Item1);
 
@@ -165,10 +186,11 @@ namespace ServidoresData
 
                     fi.Delete();
 
-                    setDownloadFinished();
+                    downloadFinished(this, new AsyncCompletedEventArgs(ex, false, this));
+
+                    Console.WriteLine("Threads libres : {0}", 6 - sem.CurrentCount);
                     //throw;
                 }
-
             }
         }
 
@@ -186,11 +208,41 @@ namespace ServidoresData
 
             using (HttpClient client = new HttpClient())
             {
-
-                  await client.GetByteArrayAsyncWithProgress(url, onProgress,onFinish);  
+                // onProgress,onFinish
+                await client.GetByteArrayAsyncWithProgress(url, this);  
             }
 
         }   
+
+
+        protected void downloadProgress(object sender, DownloadAsyncProgressChangedEventArgs e)
+        {
+            
+            // Elevar el evento al UI
+            if (DownloadProgressChanged != null)
+            {
+                DownloadProgressChanged(this, e);
+            }
+            //
+            Console.WriteLine("Progreso de la descarga : {0} ({1}/{2})", _fname, e.ProgressPercentage, e.TotalBytes);
+
+        }
+
+
+        protected void downloadFinished(object sender, AsyncCompletedEventArgs e)
+        {
+            canDownload = false;
+
+            Console.WriteLine("Se ha finalizado la descarga del archivo {0}", _fname);
+
+            if (DownloadFileCompleted != null)
+            {
+                DownloadFileCompleted(this, e);
+            }
+
+            sem.Release();
+
+        }
 
         protected void setDownloadFinished()
         {
@@ -216,6 +268,7 @@ namespace ServidoresData
 
             // Elevar el evento al UI
 
+            /*
             if (ev == null)
             {
                 ev = new PWDProgressChangedEventArgs();
@@ -224,10 +277,13 @@ namespace ServidoresData
             ev.BytesReaded = BytesReaded;
             ev.TotalBytes = TotalBytes;
             ev.Percentage = Percentage;
+            */
+
+            ProgressChangedEventArgs e = new ProgressChangedEventArgs(Percentage, null);
 
             if (DownloadProgressChanged != null)
             {
-                DownloadProgressChanged(this, ev);
+                DownloadProgressChanged(this, e);
             }
             //
             Console.WriteLine("Progreso de la descarga : {0} ({1}/{2})", _fname,Percentage,BytesReaded,TotalBytes);

@@ -128,7 +128,7 @@ namespace ActualizaBDD
 
             logger.Info("Conectado al repositorio");
 
-            Repositories rs = new Repositories(@"E:\Mods");
+            //Repositories rs = new Repositories(@"E:\Mods");
 
             // La idea es hacerlo en repositorysource
             wbm = new WebDownload();
@@ -640,7 +640,7 @@ namespace ActualizaBDD
 
             apagar_botones();
 
-            this.lstServidores.IsEnabled = false;
+            //this.lstServidores.IsEnabled = false;
 
             Estado.Content = "Actualizando Mods";
 
@@ -707,6 +707,7 @@ namespace ActualizaBDD
 
             try
             {
+                
                 logger.Info("Iniciando el catalogo de addons");
 
                 cliente.CatalogFolderAsync(bay, serv.Repository, prg);

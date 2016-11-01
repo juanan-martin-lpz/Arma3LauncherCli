@@ -35,7 +35,7 @@
     <PublisherName>12BDI</PublisherName>
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>publish.htm</WebPage>
-    <ApplicationRevision>19</ApplicationRevision>
+    <ApplicationRevision>23</ApplicationRevision>
     <ApplicationVersion>2.0.1.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -67,10 +67,10 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>3D03D64224DB0C7117A8ABBCF8224110684EA4DE</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>D046857BF94C8F9E70DD40A35D052FBB29B6BC58</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>12bdi_launcher_3_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>12bdi_launcher_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <TargetZone>LocalIntranet</TargetZone>
@@ -234,6 +234,7 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="12bdi_launcher_1_TemporaryKey.pfx" />
     <None Include="12bdi_launcher_2_TemporaryKey.pfx" />
     <None Include="12bdi_launcher_3_TemporaryKey.pfx" />
     <None Include="12bdi_launcher_TemporaryKey.pfx" />

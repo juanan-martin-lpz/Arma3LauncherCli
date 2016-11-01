@@ -117,6 +117,7 @@
     <Compile Include="DeleteModCommand.cs" />
     <Compile Include="DownloadFileCommand.cs" />
     <Compile Include="HttpClientExtensions.cs" />
+    <Compile Include="HttpDownload.cs" />
     <Compile Include="IMyAction.cs" />
     <Compile Include="IWebDownload.cs" />
     <Compile Include="Mod.cs" />

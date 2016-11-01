@@ -23,7 +23,7 @@ namespace ServidoresData
         {
             wd = new PortableWebDownload(Server, Repo, Filename, Target);
             wd.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadCompleted);
-            wd.DownloadProgressChanged += new PortableDownloadProgressChangedEventHandler(ProgressChanged);
+            wd.DownloadProgressChanged += new ProgressChangedEventHandler(ProgressChanged);
             wd.WebDownloadProgressChanged += new ProgressChangedEventHandler(OnWebDownloadProgressChange);
 
 
@@ -49,13 +49,13 @@ namespace ServidoresData
         }
 
         
-        private void ProgressChanged(object sender, PWDProgressChangedEventArgs e)
+        private void ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             
             IProgress<int> prg = (IProgress<int>)_prg;
 
             
-            prg.Report(e.Percentage);
+            prg.Report(e.ProgressPercentage);
         }
 
         private void DownloadCompleted(object sender, AsyncCompletedEventArgs e)

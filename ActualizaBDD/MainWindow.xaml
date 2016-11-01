@@ -63,7 +63,7 @@
                                     <TextBlock Grid.Column="7" />
                                     <TextBlock Text="{Binding Nombre}" Grid.Column="8" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="9" />
-                                    <Button Click="DetallesActualizacion_Click" IsEnabled="False" Grid.Column="9">
+                                    <Button Click="DetallesActualizacion_Click" IsEnabled="True" Grid.Column="9">
                                         <DockPanel>
                                             <Image Source="Resources/Images/Buttons/note.ico"/>
                                         </DockPanel>

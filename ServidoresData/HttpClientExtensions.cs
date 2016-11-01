@@ -4,13 +4,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net.Http;
+using System.ComponentModel;
 
 namespace ServidoresData
 {
     public static class HttpClientExtensions
     {
 
-        public static async Task<Tuple<long, byte[]>> GetByteArrayAsyncWithProgress(this HttpClient client, string requestUri, Action<int, int, int> onProgress, Action onFinish)
+        public delegate void DownloadProgress(object sender, DownloadAsyncProgressChangedEventArgs e);
+        public delegate void DownloadFinished(object sender, AsyncCompletedEventArgs e);
+
+        public static event DownloadProgress OnDownloadProgress;
+        public static event DownloadFinished OnDownloadFinished;
+
+        // Action<int, int, int> onProgress, Action onFinish
+        public static async Task<Tuple<long, byte[]>> GetByteArrayAsyncWithProgress(this HttpClient client, string requestUri, object sender)
         {
 
             List<byte> result = new List<byte>();
@@ -84,7 +92,14 @@ namespace ServidoresData
                                 result.AddRange(buffer.Take(read));
 
                             bytesRead += read;
-                            onProgress(bytesRead, megaBytesTotal, percent(bytesRead, bytesTotal));
+
+                            if (OnDownloadProgress != null)
+                            {
+                                DownloadAsyncProgressChangedEventArgs e = new DownloadAsyncProgressChangedEventArgs(percent(bytesRead, bytesTotal),sender);
+                                OnDownloadProgress(sender, e);
+
+                            }
+                            //onProgress(bytesRead, bytesTotal, percent(bytesRead, bytesTotal));
                         }
                         else
                         {
@@ -93,7 +108,14 @@ namespace ServidoresData
                     }
 
                     // Aqui ya hemos terminado
-                    onFinish();
+                    if (OnDownloadFinished != null)
+                    {
+                        AsyncCompletedEventArgs e = new AsyncCompletedEventArgs(null, false, sender);
+
+                        OnDownloadFinished(sender, e);
+                    }
+
+                    //onFinish();
                 }
             }
 

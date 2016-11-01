@@ -988,10 +988,12 @@ namespace ServidoresData
 
             AsyncCompletedEventArgs e = new AsyncCompletedEventArgs(null, false, null);
 
+            /*
             while (currents.Count > 0)
             {
                 // do nothing
             }
+            */
 
             OnUpgradeRepositoryCompleted(e);
         }
@@ -1027,9 +1029,9 @@ namespace ServidoresData
                             
                             currents.Remove(c);
 
-                            pplan.Current++;
+                            //pplan.Current++;
 
-                            OnPlanProgress(this, pplan);
+                            //OnPlanProgress(this, pplan);
 
                         };
 
@@ -1054,9 +1056,9 @@ namespace ServidoresData
                         };
                     }
 
-                    //pplan.Current++;
+                    pplan.Current++;
 
-                    //OnPlanProgress(this, pplan);
+                    OnPlanProgress(this, pplan);
 
                     currents.Add(c);
 
