@@ -12,6 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Threading.Tasks;
 using ServidoresData;
+using System.IO;
 
 namespace ActualizaBDD
 {
@@ -20,14 +21,19 @@ namespace ActualizaBDD
     /// </summary>
     public partial class xpresslauncher : Window
     {
-        List<ModView> allMods;
+        List<Mod> allMods;
         string Arma2Path;
         string Arma3Path;
 
-        public xpresslauncher(string arma2path, string arma3path,List<ModView> mods)
+
+        public xpresslauncher(string arma2path, string arma3path,Servidor s)
         {
             InitializeComponent();
-            allMods = mods;
+
+            
+            allMods = s.ModList.ToList<Mod>();
+
+            lista.ItemsSource = allMods;
 
             Arma2Path = arma2path;
             Arma3Path = arma3path;
@@ -40,21 +46,13 @@ namespace ActualizaBDD
 
         private void selectArma3()
         {
-            if (allMods == null) { return; }
 
-            var arma3 = allMods.Where(x => x.Arma == "3");
-
-            lista.ItemsSource = arma3;
         }
 
 
         private void selectArma2()
         {
-            if (allMods == null) { return; }
 
-            var arma2 = allMods.Where(x => x.Arma == "2");
-
-            lista.ItemsSource = arma2;
         }
 
 
@@ -103,9 +101,9 @@ namespace ActualizaBDD
 
             string smods = "";
 
-            foreach(ModData m in list)
+            foreach(Mod m in list)
             {
-                if (m.Selected == true) { smods += m.Mod + ";";}
+                if (m.Selected == true) { smods += m.AbsolutePath + ";";}
             }
 
             //if (smods.Length > 1) { parametros += " -mods=" + smods;}
@@ -113,6 +111,8 @@ namespace ActualizaBDD
             parametros += " -mod=" + smods + " -skipintro -world=empty";
 
             txtExec.Text = comando + parametros;
+
+            
 
             arranca_juego(path,comando,parametros);
 

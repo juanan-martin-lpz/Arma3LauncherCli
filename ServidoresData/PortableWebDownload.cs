@@ -34,7 +34,7 @@ namespace ServidoresData
 
         bool canDownload = true;
 
-        static SemaphoreSlim sem;
+        //static SemaphoreSlim sem;
 
         //DownloadAsyncProgressChangedEventArgs e;
         //public event PortableDownloadProgressChangedEventHandler DownloadProgressChanged;
@@ -69,7 +69,7 @@ namespace ServidoresData
 
             canDownload = true;
 
-            sem = new SemaphoreSlim(6);
+            //sem = new SemaphoreSlim(6);
         }
 
         public string Filename
@@ -106,7 +106,7 @@ namespace ServidoresData
         }
 
 
-        public async void DownloadAsync()
+        public async Task<bool> DownloadAsync()
         {
             string urlAddress = _server + "/" + _repo + "/" + _fname;
 
@@ -114,8 +114,10 @@ namespace ServidoresData
 
             //Action<int, int, int> onProgress = setDownloadProgress;
             //Action onFinish = setDownloadFinished;
+            
+            
 
-            await sem.WaitAsync();
+            //await sem.WaitAsync();
 
             Console.WriteLine("Preparando descarga...");
 
@@ -143,7 +145,7 @@ namespace ServidoresData
 
             using (HttpClient client = new HttpClient())
             {
-                Console.WriteLine("Threads libres : {0}", 6 - sem.CurrentCount);
+                //Console.WriteLine("Threads libres : {0}", 6 - sem.CurrentCount);
 
                 FileStream file = new FileStream(_target, FileMode.Create);
 
@@ -176,7 +178,8 @@ namespace ServidoresData
                     }
 
                     file.Close();
-                    
+                    return true;
+
                 }
                 catch (Exception ex)
                 {
@@ -188,7 +191,9 @@ namespace ServidoresData
 
                     downloadFinished(this, new AsyncCompletedEventArgs(ex, false, this));
 
-                    Console.WriteLine("Threads libres : {0}", 6 - sem.CurrentCount);
+                    //Console.WriteLine("Threads libres : {0}", 6 - sem.CurrentCount);
+
+                    return false;
                     //throw;
                 }
             }
@@ -240,7 +245,7 @@ namespace ServidoresData
                 DownloadFileCompleted(this, e);
             }
 
-            sem.Release();
+            //sem.Release();
 
         }
 
@@ -257,7 +262,7 @@ namespace ServidoresData
                 DownloadFileCompleted(this, e);
             }
 
-            sem.Release();
+            //sem.Release();
 
         }
 

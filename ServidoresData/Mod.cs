@@ -16,6 +16,7 @@ namespace ServidoresData
 
         string path;
 
+        string absolutePath;
 
         ReadOnlyCollection<ModFile> files;
 
@@ -34,6 +35,8 @@ namespace ServidoresData
         public Mod(string p, Repository parent)
         {
             repo = parent;
+
+            absolutePath = p;
 
             DirectoryInfo info = new DirectoryInfo(p);
 
@@ -84,6 +87,14 @@ namespace ServidoresData
             }
         }
 
+        public string AbsolutePath
+        {
+            get
+            {
+                return absolutePath;
+            }
+        }
+
         public int Version
         {
             get
@@ -116,6 +127,12 @@ namespace ServidoresData
             }
         }
 
+
+        public bool Selected
+        {
+            get;
+            set;
+        }
         public void Check() 
         { 
         

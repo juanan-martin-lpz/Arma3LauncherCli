@@ -16,6 +16,7 @@ using System.Threading;
 using Db4objects.Db4o.Linq;
 using NLog;
 using NLog.Targets;
+using Newtonsoft.Json;
 
 namespace ActualizaBDD
 {    
@@ -46,20 +47,27 @@ namespace ActualizaBDD
         Diagnosticos diag;
         
         Repository cliente;
+        Repositories rs;
+
         string db_name;
         Servidor serv;
 
         Repository re;
-        
+
+        DownloadProgress dp;
+
+        Repositories repositories;
 
         public MainWindow()
         {
 
             FileTarget target = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
-            string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + System.DateTime.Now.ToShortDateString().Replace("/","_") + ".txt";
+            string datemask = System.DateTime.Now.ToShortDateString().Replace("/", "_");
+            datemask = datemask.Replace("/", "_");
+            string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + datemask + ".txt";
             target.FileName = filename;
 
-
+            
             logger.Info("Iniciando sesion : {0}", System.DateTime.Now);
             
 
@@ -114,8 +122,9 @@ namespace ActualizaBDD
 
             mods = new List<ModView>();
 
-            string fpath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\modlist.txt";
-            string spath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\Servidores2.txt";
+            string rpath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\\12bdi_launcher\\Repositories";
+            string fpath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\\12bdi_launcher\\modlist.txt";
+            string spath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\\12bdi_launcher\\Servidores2.txt";
             
             if (File.Exists(fpath))
             {
@@ -128,7 +137,16 @@ namespace ActualizaBDD
 
             logger.Info("Conectado al repositorio");
 
-            //Repositories rs = new Repositories(@"E:\Mods");
+
+            repositories = new Repositories();
+
+            
+            if ((repositories != null) && (repositories.RepositoryProxyList != null))
+            {
+                treeView.ItemsSource = repositories.RepositoryProxyList;
+            }
+
+            //rs = new Repositories(rpath);
 
             // La idea es hacerlo en repositorysource
             wbm = new WebDownload();
@@ -208,15 +226,15 @@ namespace ActualizaBDD
             btn_restablecer_configuracion.IsEnabled = true;
             btn_carpeta_arma2.IsEnabled = true;
             btn_carpeta_arma3.IsEnabled = true;
-            btn_comprobar_addons_a2.IsEnabled = true;
-            btn_comprobar_addons_a3.IsEnabled = true;
-            btn_ejecutar_aceclippi.IsEnabled = true;
+            //btn_comprobar_addons_a2.IsEnabled = true;
+            //btn_comprobar_addons_a3.IsEnabled = true;
+            //btn_ejecutar_aceclippi.IsEnabled = true;
             btn_volcar_configuracion.IsEnabled = true;
-            btn_comprobar_addons_a3_minimal.IsEnabled = true;
+            //btn_comprobar_addons_a3_minimal.IsEnabled = true;
 
             btn_catalogo_seguro.IsEnabled = true;
-            pluginsACRE.IsEnabled = true;
-            pluginsTFAR.IsEnabled = true;
+            //pluginsACRE.IsEnabled = true;
+            //pluginsTFAR.IsEnabled = true;
             btnReloadAdmin.IsEnabled = true;
             btnxpress.IsEnabled = true;
             radArma2.IsEnabled = true;
@@ -233,15 +251,15 @@ namespace ActualizaBDD
             btn_restablecer_configuracion.IsEnabled = false;
             btn_carpeta_arma2.IsEnabled = false;
             btn_carpeta_arma3.IsEnabled = false;
-            btn_comprobar_addons_a2.IsEnabled = false;
-            btn_comprobar_addons_a3.IsEnabled = false;
-            btn_comprobar_addons_a3_minimal.IsEnabled = false;
-            btn_ejecutar_aceclippi.IsEnabled = false;
+            //btn_comprobar_addons_a2.IsEnabled = false;
+            //btn_comprobar_addons_a3.IsEnabled = false;
+            //btn_comprobar_addons_a3_minimal.IsEnabled = false;
+            //btn_ejecutar_aceclippi.IsEnabled = false;
             btn_volcar_configuracion.IsEnabled = false;
 
             btn_catalogo_seguro.IsEnabled = false;
-            pluginsACRE.IsEnabled = false;
-            pluginsTFAR.IsEnabled = false;
+            //pluginsACRE.IsEnabled = false;
+            //pluginsTFAR.IsEnabled = false;
 
             btnReloadAdmin.IsEnabled = false;
             btnxpress.IsEnabled = false;
@@ -323,6 +341,8 @@ namespace ActualizaBDD
             string carpeta_entrada = tb_carpeta_base_arma3.Text;
             string carpeta_salida = tb_carpeta_repositorio.Text;
             string repositorio = txtRepo.Text;
+
+            
 
             // Proceso principal
             Task t1 = new Task(
@@ -498,10 +518,17 @@ namespace ActualizaBDD
         {
             //List<ModData> mods = new List<ModData>();
 
-            var res = from m in mods where m.Arma == "3" select m.Name;
-            string[] totalmods = res.ToArray<string>();
 
-            xpresslauncher launcher = new xpresslauncher(tb_carpeta_arma2.Text,tb_carpeta_arma3.Text, mods);
+            //var res = from m in mods where m.Arma == "3" select m.Name;
+            //string[] totalmods = res.ToArray<string>();
+
+
+            Servidor s = (Servidor)lstServidores.SelectedValue;
+
+            serv = ((Servidor)lstServidores.SelectedItem != null ? (Servidor)lstServidores.SelectedItem : (Servidor)lstServidores.Items[0]);
+
+
+            xpresslauncher launcher = new xpresslauncher(tb_carpeta_arma2.Text,tb_carpeta_arma3.Text, serv);
 
             launcher.ShowDialog();
             //launcher.Show();
@@ -514,7 +541,11 @@ namespace ActualizaBDD
             string carpeta_salida = tb_carpeta_repositorio.Text;
             string repositorio = txtRepo.Text;
 
+            List<RepositoryProxy> reposl = new List<RepositoryProxy>();
+
             DirectoryInfo wrepo = new DirectoryInfo(carpeta_salida);
+
+            
 
             List<string> lines = new List<string>();
             FileInfo modlist = new FileInfo(carpeta_salida + @"\modlist.txt");
@@ -523,14 +554,35 @@ namespace ActualizaBDD
 
             foreach (DirectoryInfo i in wrepo.GetDirectories())
             {
-                generateModFile(lines, "3", i);
+
+                FileInfo c = new FileInfo(carpeta_salida + @"\" + wrepo.Name + @"\timestamp.txt");
+
+                if (c.Exists)
+                {
+                    c.Delete();
+                }
+
+                StreamWriter canario = new StreamWriter(carpeta_salida + @"\" + i.Name + @"\timestamp.txt");
+
+                //File.Open(carpeta_salida + @"\" + wrepo.Name + @"\timestamp.txt",FileMode.OpenOrCreate);
+
+                long fecha = System.DateTime.Now.ToBinary();
+
+                canario.WriteLine(fecha);
+
+                canario.Close();
+
+                RepositoryProxy rr = new RepositoryProxy() { Nombre = i.Name };
+                generateModFile(lines, "3", i, rr);
+                reposl.Add(rr);
             }
 
+            File.WriteAllText(carpeta_salida + @"\repositories.json", JsonConvert.SerializeObject(reposl));
 
             System.IO.File.WriteAllLines(modlist.FullName, lines);
         }
 
-        private void generateModFile(List<string> lines,string juego,DirectoryInfo mod)
+        private void generateModFile(List<string> lines,string juego,DirectoryInfo mod, RepositoryProxy rp)
         {
 
             var todos = from DirectoryInfo i in mod.GetDirectories() select i;
@@ -541,6 +593,7 @@ namespace ActualizaBDD
             {
                 if (!lista.Contains(r.Name))
                 {
+                    rp.Mods.Add(new ModProxy() { Nombre = r.Name });
                     lista.Add(r.Name);
                 }
             }
@@ -627,7 +680,7 @@ namespace ActualizaBDD
             serv = ((Servidor)lstServidores.SelectedItem != null ? (Servidor)lstServidores.SelectedItem : (Servidor)lstServidores.Items[0]);
 
             string conexion = @"-connect=" + serv.IP + @" -port=" + serv.Puerto + @" -password=" + serv.Password;
-            string lista_mods = @" -mod=" + serv.ModListToString();
+            string lista_mods = @" -mod=" + serv.ModListToString(); // + @";" + serv.MapListToString();
 
             System.Windows.Clipboard.SetText(conexion + lista_mods);
 
@@ -811,15 +864,13 @@ namespace ActualizaBDD
 
         private void updateTasks(object sender, Repository.TaskProgressProgressChanged e)
         {
-
             try
             {
                 this.Dispatcher.Invoke(new System.Action(() =>
                 {
                 //Estado.Content = "Ejecutando Tarea";
                     SubEstado.Content = e.Message;
-                    progreso.Value = e.ProgressPercentage;
-                    
+                    progreso.Value = e.ProgressPercentage;           
                 }));
             }
             catch (Exception ex)
@@ -833,8 +884,12 @@ namespace ActualizaBDD
 
         private void DetallesActualizacion_Click(object sender, RoutedEventArgs e)
         {
-            DownloadProgress dp = new DownloadProgress(cliente);
-            dp.Show();
+            if ((cliente != null) && (cliente.Downloading))
+            {
+                dp = new DownloadProgress(cliente);
+                dp.Show();
+            }
+
         }
 
         private void radArma3_Checked(object sender, RoutedEventArgs e)
@@ -889,6 +944,13 @@ namespace ActualizaBDD
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
+
+            if (dp != null)
+            {
+                dp.Close();
+                dp = null;
+            }
+
             try
             {
                 if (cliente != null)

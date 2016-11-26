@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ActualizaBDD"
         mc:Ignorable="d"
-        Title="Progreso de Descarga" Height="313.862" Width="809.759" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" ShowInTaskbar="False" Closing="Window_Closing">
+        Title="Progreso de Descarga" Height="619.348" Width="809.759" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" ShowInTaskbar="False" Closing="Window_Closing">
     <Grid>
-        <ListView x:Name="listView" ItemsSource="{Binding CommandBase}" IsSynchronizedWithCurrentItem="true" HorizontalAlignment="Left" Margin="5,10,0,0" VerticalAlignment="Top" Width="789" Height="265">
+        <ListView x:Name="listView" ItemsSource="{Binding CommandBase}" IsSynchronizedWithCurrentItem="true" HorizontalAlignment="Left" Margin="5,10,0,0" VerticalAlignment="Top" Width="789" Height="570">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Grid>

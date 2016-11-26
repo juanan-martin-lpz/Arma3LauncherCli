@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using Newtonsoft.Json;
 
 namespace ServidoresData
 {
@@ -16,11 +17,33 @@ namespace ServidoresData
 
         Dictionary<string, Repository> repositoryList;
 
+        List<RepositoryProxy> repolight;
+        private string webrepository = "http://188.165.254.137/WebRepo";
+
         public Repositories()
         {
             repositoryList = new Dictionary<string, Repository>();
-        }
+            repolight = new List<RepositoryProxy>();
 
+            bay = new RepositoryBay();
+
+            try
+            {
+
+
+                WinWebDownload dl = new WinWebDownload();
+                dl.DownloadFile(webrepository, @"/repositories.json", bay.ToDirectoryInfo().FullName + @"\repositories.json");
+
+                string json = File.ReadAllText(bay.ToDirectoryInfo().FullName + @"\repositories.json");
+
+                repolight = JsonConvert.DeserializeObject<List<RepositoryProxy>>(json);
+            }
+            catch
+            {
+                repolight = new List<RepositoryProxy>();
+            }
+
+        }
         // Necesitamos al menos la carpeta base
         public Repositories(string from)
         {
@@ -79,6 +102,12 @@ namespace ServidoresData
             }
         }
 
+
+        public List<RepositoryProxy> RepositoryProxyList
+        {
+            get { return repolight; }
+        }
+
         public Repository this[string Name]
         {
             get
@@ -95,6 +124,12 @@ namespace ServidoresData
             }
 
             GC.SuppressFinalize(this);
+        }
+
+        public List<Repository> RepositoryList
+        {
+            get { return repositoryList.Values.ToList<Repository>(); }
+            
         }
     }
 }

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Db4objects.Db4o;
 using Db4objects.Db4o.Linq;
 using System.IO;
+using NLog;
+using NLog.Targets;
 
 namespace ServidoresData
 {
@@ -16,6 +18,9 @@ namespace ServidoresData
         private Db4objects.Db4o.Config.IConfiguration _config;
         private IDb4oLinqQuery<DBData> data;
 
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        private static StringWriter writer;
 
 
         private string nombre_bdd;
@@ -29,18 +34,30 @@ namespace ServidoresData
             try
             {
                 _config = Db4objects.Db4o.Db4oFactory.Configure();
-                _config.AutomaticShutDown(true);
+                _config.AutomaticShutDown(false);
                 _config.ActivationDepth(3);
                 _config.UpdateDepth(3);
+                _config.AllowVersionUpdates(true);
+                _config.MessageLevel(3);
                 _config.Add(new Db4objects.Db4o.TA.TransparentActivationSupport());
+                _config.Add(new Db4objects.Db4o.TA.TransparentPersistenceSupport());
+
                 _config.LockDatabaseFile(false);
+
+                writer = new StringWriter();
+
+                _config.SetOut(writer);
 
                 _dbContainer = Db4objects.Db4o.Db4oFactory.OpenFile(db);
 
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                logger.Fatal("=================================================================================");
+                logger.Fatal("Error fatal al configurar y abrir la base de datos : {0}", ex.Message);
+                logger.Fatal("=================================================================================");
+
+                throw ex;
             }
 
         }
@@ -56,9 +73,16 @@ namespace ServidoresData
             {
                 _dbContainer = Db4objects.Db4o.Db4oFactory.OpenFile(nombre_bdd);
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                logger.Fatal("=================================================================================");
+                logger.Fatal("Error fatal al abrir la base de datos : {0}", ex.Message);
+
+                logger.Fatal("{0}", writer.ToString());
+
+                logger.Fatal("=================================================================================");
+
+                throw ex;
             }
 
         }
@@ -73,10 +97,17 @@ namespace ServidoresData
                     data = from DBData d in _dbContainer select d;
 
                 }
-                catch
+                catch (Exception ex)
                 {
-                    throw;
+                    logger.Fatal("=================================================================================");
+                    logger.Fatal("Error fatal al leer la base de datos : {0}", ex.Message);
+                    logger.Fatal("{0}", writer.ToString());
+
+                    logger.Fatal("=================================================================================");
+
+                    throw ex;
                 }
+
             }
         }
 
@@ -86,10 +117,17 @@ namespace ServidoresData
             {
                 _dbContainer.Delete(Target);
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                logger.Fatal("=================================================================================");
+                logger.Fatal("Error fatal al eliminar un objeto de la base de datos : {0}", ex.Message);
+                logger.Fatal("{0}", writer.ToString());
+
+                logger.Fatal("=================================================================================");
+
+                throw ex;
             }
+
         }
 
         public bool existObject(string ruta, string nombre, long len)
@@ -105,11 +143,15 @@ namespace ServidoresData
                 if (q.Count() > 0) { return true; } else { return false; }
 
             }
-            catch
+            catch (Exception ex)
             {
-                
-                //_config.
-                throw;
+                logger.Fatal("=================================================================================");
+                logger.Fatal("Error fatal al consultar la base de datos : {0}", ex.Message);
+                logger.Fatal("{0}", writer.ToString());
+
+                logger.Fatal("=================================================================================");
+
+                throw ex;
             }
         }
 
@@ -125,6 +167,7 @@ namespace ServidoresData
 
         public void Disconnect()
         {
+            
             if (_dbContainer != null)
             {
                 _dbContainer.Close();
@@ -135,6 +178,7 @@ namespace ServidoresData
         public object Query(System.Linq.Expressions.Expression LinqQuery)
         {
             if (LinqQuery != null)
+
             {
                 var result = LinqQuery;
                 return result;
@@ -159,6 +203,11 @@ namespace ServidoresData
                 }
                 catch (Db4objects.Db4o.Ext.InvalidIDException ex)
                 {
+                    logger.Fatal("=================================================================================");
+                    logger.Fatal("Error fatal al defragmentar la base de datos : {0}", ex.Message);
+                    logger.Fatal("{0}", writer.ToString());
+
+                    logger.Fatal("=================================================================================");
 
                 }
                 catch (System.IO.IOException)
@@ -172,9 +221,15 @@ namespace ServidoresData
 
                     db4oDB.Defragment(path, backup);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    throw;
+                    logger.Fatal("=================================================================================");
+                    logger.Fatal("Error fatal al defragmentar la base de datos : {0}", ex.Message);
+                    logger.Fatal("{0}", writer.ToString());
+
+                    logger.Fatal("=================================================================================");
+
+                    throw ex;
                 }
 
                 FileInfo fi = new FileInfo(backup);

@@ -75,6 +75,8 @@ namespace ServidoresData
 
         List<CommandBase> currents = new List<CommandBase>();
 
+        bool _downloading = false;
+
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
         public delegate void CatalogoCompletedEventHandler(object sender, CatalogoCompletedEventArgs e);
@@ -98,6 +100,7 @@ namespace ServidoresData
         public delegate void UpgradeRepositoryCompletedEventHandler(object sender, AsyncCompletedEventArgs e);
         public event UpgradeRepositoryCompletedEventHandler UpgradeRepositoryCompleted;
 
+        static SemaphoreSlim sem;
         public class TaskProgressProgressChanged : ProgressChangedEventArgs
         {
             public object Command { get; set; }
@@ -178,12 +181,14 @@ namespace ServidoresData
         //       
         public Repository(string folder, RepositoryBay Bay, string Repo, List<ModView> Modlist)
         {
+            _downloading = false;
+            sem = new SemaphoreSlim(12);
 
             Console.WriteLine("Paso 1");
 
-            FileTarget target = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
-            string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + System.DateTime.Now.ToShortDateString() + ".txt";
-            target.FileName = filename;
+            //FileTarget target = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
+            //string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + System.DateTime.Now.ToShortDateString() + ".txt";
+            //target.FileName = filename;
 
             Console.WriteLine("Paso 2");
 
@@ -240,6 +245,8 @@ namespace ServidoresData
 
         public Repository(string folder, RepositoryBay Bay, string Repo)
         {
+            _downloading = false;
+            sem = new SemaphoreSlim(12);
 
             Console.WriteLine("Paso 1");
 
@@ -291,6 +298,9 @@ namespace ServidoresData
 
         public Repository(string folder, string Repo, string targetFolder, List<ModView> Modlist)
         {
+            _downloading = false;
+            sem = new SemaphoreSlim(12);
+
             FileTarget targ = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
             string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + System.DateTime.Now.ToShortDateString() + ".txt";
             targ.FileName = filename;
@@ -311,7 +321,7 @@ namespace ServidoresData
                 targetdir.Create();
             }
 
-            /*
+            
             try
             {
                 logger.Info("Se va a defragmentar la base de datos");
@@ -322,7 +332,7 @@ namespace ServidoresData
             {
                 logger.Fatal("Excepcion al defragmentar la base de datos : {0}", ex1.Message);
             }
-            */
+            
 
             try
             {
@@ -338,9 +348,14 @@ namespace ServidoresData
             }
         }
 
+
+        public bool Downloading
+        {
+            get { return _downloading;  }
+        }
         public List<Task> Tasks
         {
-            get { return commandList; }
+            get { return commandList;}
             set { }
         }
 
@@ -348,6 +363,7 @@ namespace ServidoresData
         {
 
             Repository r = new Repository();
+            sem = new SemaphoreSlim(12);
 
             r.basepath = folder;
             r.bay = Bay;
@@ -594,17 +610,20 @@ namespace ServidoresData
                             {
                                 try
                                 {
-                                    DBData data = new DBData();
+                                    if (fichero.Length > 0)
+                                    {
+                                        DBData data = new DBData();
 
-                                    data.Ruta = Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), "");
-                                    data.Nombre = fichero.Name;
-                                    data.Firma = Repository.xxHashSignature(fichero.FullName);
-                                    data.Mod = m.Nombre;
-                                    data.Tamano = fichero.Length;
+                                        data.Ruta = Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), "");
+                                        data.Nombre = fichero.Name;
+                                        data.Firma = Repository.xxHashSignature(fichero.FullName);
+                                        data.Mod = m.Nombre;
+                                        data.Tamano = fichero.Length;
 
-                                    dcliente.Save(data);
-
-                                    tnew++;
+                                        dcliente.Save(data);
+                                        
+                                        tnew++;
+                                    }
                                 }
                                 catch (Exception ex)
                                 {
@@ -972,6 +991,7 @@ namespace ServidoresData
 
         public void UpgradeRepositoryAsync()
         {
+            
             pplan = new PlanProgressEventArgs(0, null);
 
             PlanProgressChangedEventHandler plan = new PlanProgressChangedEventHandler(OnPlanProgress);
@@ -1006,7 +1026,10 @@ namespace ServidoresData
             pplan.Total = TasksToDo.Count();
             pplan.Current = 0;
 
-            foreach(CommandBase c in TasksToDo)
+            _downloading = true;
+            NotifyPropertyChanged("Downloading");
+
+            foreach (CommandBase c in TasksToDo)
             {
                 try
                 {
@@ -1062,8 +1085,23 @@ namespace ServidoresData
 
                     currents.Add(c);
 
-                    c.Execute();
+                    try
+                    {
+                        //sem.Wait();
 
+                        object locker = new object();
+
+                        lock (locker)
+                        {
+                            Monitor.Enter(c);
+                            c.Execute();
+                        }
+                    }
+                    finally
+                    {
+                        //sem.Release();
+                        Monitor.Pulse(c);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -1071,8 +1109,13 @@ namespace ServidoresData
                     e.Message = c.Description + " fallo: " + ex.Message;
 
                     OnUpgradeRepositoryProgressChanged(e);
+
+                    sem.Release();
                 }
             }
+
+            _downloading = false;
+            NotifyPropertyChanged("Downloading");
         }
 
         private void OnPlanProgress(object sender, PlanProgressEventArgs e)

@@ -32,7 +32,7 @@ namespace ServidoresData
             
         }
 
-        public override void Execute()
+        public async override void Execute()
         {
             beforeexecargs.Server = wd.Server;
             beforeexecargs.Repo = wd.Repository;
@@ -44,7 +44,13 @@ namespace ServidoresData
 
             //sem.Wait();
 
-            wd.DownloadAsync();
+            bool result = await wd.DownloadAsync().ConfigureAwait(true);
+
+            
+            if (!result)
+            {
+                Console.WriteLine("La descarga del fichero {0} ha fallado", wd.Filename);
+            }
             
         }
 

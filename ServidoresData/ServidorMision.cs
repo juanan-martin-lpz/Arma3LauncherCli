@@ -8,16 +8,8 @@ using System.Collections.ObjectModel;
 
 namespace ServidoresData
 {
-	public enum StatusInfo
-	{
-		Unknown = -1,
-		Stopped = 0,
-		Running = 1
-	}
-	
-    public class Servidor : INotifyPropertyChanged
+   public  class ServidorMision : INotifyPropertyChanged
     {
-
         string arma;
         DateTime fecha;
         string nombre;
@@ -25,17 +17,21 @@ namespace ServidoresData
         string ip;
         string password;
         string repo;
-        
+        string miscode;
+        string briefing;
+        string misimg;
 
         StatusInfo status;
         string publishedat;
 
+        ObservableCollection<Mod> maplist;
         ObservableCollection<Mod> modlist;
 
-        public Servidor(/* ServerConfig config */)
+        public ServidorMision(/* ServerConfig config */)
         {
             modlist = new ObservableCollection<Mod>();
-            
+            maplist = new ObservableCollection<Mod>();
+
             //_config = config;
 
             status = StatusInfo.Unknown;
@@ -46,7 +42,7 @@ namespace ServidoresData
 
         public string Image
         {
-            get 
+            get
             {
                 if (arma == "2")
                 {
@@ -64,11 +60,11 @@ namespace ServidoresData
         {
             get
             {
-            	return status == StatusInfo.Running ? "Resources/Images/ListView/iconon.jpg" : "Resources/Images/ListView/iconoff.jpg";
+                return status == StatusInfo.Running ? "Resources/Images/ListView/iconon.jpg" : "Resources/Images/ListView/iconoff.jpg";
             }
         }
 
-        public string Arma 
+        public string Arma
         {
             get
             {
@@ -93,6 +89,12 @@ namespace ServidoresData
             }
         }
 
+        public DateTime FechaJuego
+        {
+            get { return fecha; }
+            set { fecha = value; NotifyPropertyChanged("FechaJuego"); }
+        }
+
         public string Puerto
         {
             get
@@ -102,7 +104,7 @@ namespace ServidoresData
 
             set
             {
-               puerto = value; NotifyPropertyChanged("Puerto");
+                puerto = value; NotifyPropertyChanged("Puerto");
             }
         }
 
@@ -115,7 +117,7 @@ namespace ServidoresData
 
             set
             {
-               publishedat = value; NotifyPropertyChanged("PublishedAt");
+                publishedat = value; NotifyPropertyChanged("PublishedAt");
             }
         }
 
@@ -158,6 +160,45 @@ namespace ServidoresData
             }
         }
 
+
+        public string MissionCode
+        {
+            get
+            {
+                return miscode;
+            }
+
+            set
+            {
+                miscode = value; NotifyPropertyChanged("MissionCode");
+            }
+        }
+
+        public string MissionBriefing
+        {
+            get
+            {
+                return briefing;
+            }
+
+            set
+            {
+                briefing = value; NotifyPropertyChanged("MissionBriefing");
+            }
+        }
+
+        public string MissionIMG
+        {
+            get
+            {
+                return misimg;
+            }
+
+            set
+            {
+                misimg = value; NotifyPropertyChanged("MissionIMG");
+            }
+        }
         public ObservableCollection<Mod> ModList
         {
             get
@@ -168,6 +209,19 @@ namespace ServidoresData
             set
             {
                 modlist = value; NotifyPropertyChanged("ModList");
+            }
+        }
+
+        public ObservableCollection<Mod> MapList
+        {
+            get
+            {
+                return maplist;
+            }
+
+            set
+            {
+                maplist = value; NotifyPropertyChanged("MapList");
             }
         }
 
@@ -185,7 +239,7 @@ namespace ServidoresData
         {
             string lista = "";
 
-            
+
             if (ModList.Count > 0)
             {
                 foreach (Mod s in ModList)
@@ -201,7 +255,7 @@ namespace ServidoresData
         {
             string lista = "";
 
-            if (! path.EndsWith(@"\"))
+            if (!path.EndsWith(@"\"))
             {
                 path = path + @"\";
             }
@@ -217,23 +271,37 @@ namespace ServidoresData
             return lista;
         }
 
-        
+        public string MapListToString()
+        {
+            string lista = "";
+
+
+            if (MapList.Count > 0)
+            {
+                foreach (Mod s in MapList)
+                {
+                    lista += s.Nombre + ";";
+                }
+            }
+
+            return lista;
+        }
         public StatusInfo Status
         {
-        	get
-        	{
-        		return status;
-        	}
+            get
+            {
+                return status;
+            }
         }
-        
+
         public void Publish(Repository target)
         {
-        	//target.CreateDB();
+            //target.CreateDB();
 
             //target.Publish();
-        	
+
         }
-        
+
         public Servidor Clone()
         {
             Servidor s = new Servidor(/* _config */);
@@ -242,8 +310,8 @@ namespace ServidoresData
             s.Nombre = nombre;
             s.PublishedAt = publishedat;
             s.Puerto = puerto;
-            
-            foreach(Mod m in modlist)
+
+            foreach (Mod m in modlist)
             {
                 s.ModList.Add(m.Clone());
             }
@@ -253,17 +321,18 @@ namespace ServidoresData
 
         public void Start()
         {
-        	
+
         }
-      
+
         public void Stop()
         {
-        	
+
         }
-        
+
         public void Remove()
         {
-        	
+
         }
+
     }
 }
