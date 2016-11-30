@@ -29,7 +29,7 @@ namespace ServidoresData
 
             try
             {
-
+                
 
                 WinWebDownload dl = new WinWebDownload();
                 dl.DownloadFile(webrepository, @"/repositories.json", bay.ToDirectoryInfo().FullName + @"\repositories.json");
@@ -37,6 +37,45 @@ namespace ServidoresData
                 string json = File.ReadAllText(bay.ToDirectoryInfo().FullName + @"\repositories.json");
 
                 repolight = JsonConvert.DeserializeObject<List<RepositoryProxy>>(json);
+
+                double oldsum = 0;
+                double newsum = 0;
+
+                foreach (RepositoryProxy r in repolight)
+                {
+                    string repofolder = bay.GetDirectoryForRepo(r.Nombre).FullName;
+                    string repo = r.Nombre;
+
+                    WinWebDownload dltstamp = new WinWebDownload();
+
+                    if (File.Exists(repofolder + @"\timestamp_" + repo + @".txt"))
+                    {
+                        File.Copy(repofolder + @"\timestamp_" + repo + @".txt", repofolder + @"\timestamp_" + repo + @".old");
+                        File.Delete(repofolder + @"\timestamp_" + repo + @".txt");
+                    }
+                    else
+                    {
+                        r.MustUpdate = true;
+                        dltstamp.DownloadFile(webrepository, repo + @"/timestamp.txt", repofolder + @"\timestamp_" + repo + @".txt");
+                        continue;
+                    }
+
+                    dltstamp.DownloadFile(webrepository, repo + @"/timestamp.txt", repofolder + @"\timestamp_" + repo + @".txt");
+
+                    if (File.Exists(repofolder + @"\timestamp_" + r.Nombre + @".old"))
+                    {
+                        oldsum = System.Convert.ToDouble(File.ReadAllText(bay.GetDirectoryForRepo(r.Nombre).FullName + @"\timestamp_" + r.Nombre + @".old"));
+                    }
+
+                    newsum = System.Convert.ToDouble(File.ReadAllText(repofolder + @"\timestamp_" + r.Nombre + @".txt"));
+
+                    r.MustUpdate = (oldsum <= newsum) ? true : false;
+
+                    if (File.Exists(repofolder + @"\timestamp_" + repo + @".old"))
+                    {
+                        File.Delete(repofolder + @"\timestamp_" + repo + @".old");
+                    }
+                }
             }
             catch
             {

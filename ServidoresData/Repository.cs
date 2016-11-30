@@ -8,13 +8,12 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Data;
 using System.Threading;
-using Db4objects.Db4o;
-using Db4objects.Db4o.Linq;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Data.HashFunction;
 using NLog;
 using NLog.Targets;
+using Newtonsoft.Json;
 
 namespace ServidoresData
 {
@@ -58,8 +57,8 @@ namespace ServidoresData
         //db4oDB db;
         //db4oDB dbrepo;
 
-        db4oDB dcliente;
-        db4oDB dservidor;
+        //db4oDB dcliente;
+        //db4oDB dservidor;
 
         ObservableCollection<WebDownloadAction> dlist;
 
@@ -76,6 +75,10 @@ namespace ServidoresData
         List<CommandBase> currents = new List<CommandBase>();
 
         bool _downloading = false;
+
+        List<DBData> modsInRepo;
+        List<DBData> dcliente;
+        List<DBData> dservidor;
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -171,6 +174,7 @@ namespace ServidoresData
         {
             
             modlist = new ObservableCollection<Mod>();
+            modsInRepo = new List<DBData>();
         }
       	
 		//  
@@ -214,6 +218,8 @@ namespace ServidoresData
 
             string dbfile = Path.Combine(bay.ToDirectoryInfo().FullName, nombre, "ficheros.db4o");
 
+            string jsonfile = Path.Combine(Bay.ToDirectoryInfo().FullName, Repo, "ficheros.json");
+
             /*
             try
             {
@@ -230,9 +236,22 @@ namespace ServidoresData
 
             try
             {
-                dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
-                dcliente.Open();
-                dcliente.ReadDB();
+
+                string jsoncontent = "";
+
+                if (File.Exists(jsonfile))
+                {
+                    jsoncontent = File.ReadAllText(jsonfile);
+                }
+
+                if (jsoncontent.Length > 0)
+                {
+                    dcliente = (List<DBData>)JsonConvert.DeserializeObject<List<DBData>>(jsoncontent);
+                }
+                else
+                {
+                    dcliente = new List<DBData>();
+                }
             }
             catch (Exception ex2)
             {
@@ -267,6 +286,8 @@ namespace ServidoresData
 
             string dbfile = Path.Combine(bay.ToDirectoryInfo().FullName, nombre, "ficheros.db4o");
 
+            string jsonfile = Path.Combine(Bay.ToDirectoryInfo().FullName, Repo, "ficheros.json");
+
             /*
             try
             {
@@ -283,9 +304,27 @@ namespace ServidoresData
 
             try
             {
-                dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
-                dcliente.Open();
-                dcliente.ReadDB();
+                string jsoncontent = "";
+
+                if (File.Exists(jsonfile))
+                {
+                    jsoncontent = File.ReadAllText(jsonfile);
+                }
+
+                if (jsoncontent.Length > 0)
+                {
+                    modsInRepo = (List<DBData>)JsonConvert.DeserializeObject<List<DBData>>(jsoncontent);
+                }
+                else
+                {
+                    modsInRepo = new List<DBData>();
+                }
+
+                dcliente = new List<DBData>();
+
+                //dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
+                //dcliente.Open();
+                //dcliente.ReadDB();
             }
             catch (Exception ex2)
             {
@@ -316,12 +355,14 @@ namespace ServidoresData
 
             string dbfile = Path.Combine(targetdir.FullName, "ficheros.db4o");
 
+            string jsonfile = Path.Combine(targetdir.FullName, "ficheros.json");
+
             if (!targetdir.Exists)
             {
                 targetdir.Create();
             }
 
-            
+            /*
             try
             {
                 logger.Info("Se va a defragmentar la base de datos");
@@ -332,13 +373,31 @@ namespace ServidoresData
             {
                 logger.Fatal("Excepcion al defragmentar la base de datos : {0}", ex1.Message);
             }
-            
+            */
 
             try
             {
-                dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
-                dcliente.Open();
-                dcliente.ReadDB();
+
+                string jsoncontent = "";
+
+                if (File.Exists(jsonfile))
+                {
+                    jsoncontent = File.ReadAllText(jsonfile);
+                }
+
+                if (jsoncontent.Length > 0)
+                {
+                    modsInRepo = (List<DBData>)JsonConvert.DeserializeObject<List<DBData>>(jsoncontent);
+                }
+                else
+                {
+                    modsInRepo = new List<DBData>();
+                }
+                dcliente = new List<DBData>();
+
+                //dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
+                //dcliente.Open();
+                //dcliente.ReadDB();
             }
             catch (Exception ex2)
             {
@@ -375,9 +434,9 @@ namespace ServidoresData
             string dbfile = Path.Combine(Bay.ToDirectoryInfo().FullName, Repo, "ficheros.db4o");
 
             //db4oDB.Defragment(dbfile, dbfile + ".backup");
-            r.dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
-            r.dcliente.Open();
-            r.dcliente.ReadDB();
+            //r.dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
+            //r.dcliente.Open();
+            //r.dcliente.ReadDB();
 
             if (!Directory.Exists(folder)) { return r; }
 			
@@ -471,7 +530,12 @@ namespace ServidoresData
                             progress.Report(cp);
                         }
 
-                        if (dcliente.existObject(Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), ""), fichero.Name, fichero.Length))
+                        //(Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), ""), fichero.Name, fichero.Length)
+
+                        var exist = from d in dcliente where d.Ruta == (Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName),"")) && d.Nombre == fichero.Name && d.Tamano == fichero.Length  select d;
+
+
+                        if (exist.Count() > 0)
                         {
                             tskip++;
                         }
@@ -487,7 +551,7 @@ namespace ServidoresData
                                 data.Mod = m.Nombre;
                                 data.Tamano = fichero.Length;
 
-                                dcliente.Save(data);
+                                dcliente.Add(data);
 
                                 tnew++;
                             }
@@ -503,6 +567,12 @@ namespace ServidoresData
                         }
                     }
                 }
+
+
+                //List<DBData> enCliente = (from DBData f in dcliente.Container select f).ToList<DBData>();
+
+
+                File.WriteAllText(di + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));
 
                 CatalogoCompletedEventArgs c = new CatalogoCompletedEventArgs(null, false, null);
                 c.Total = tfiles;
@@ -602,7 +672,10 @@ namespace ServidoresData
                                 progress.Report(cp);
                             }
 
-                            if (dcliente.existObject(Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), ""), fichero.Name,fichero.Length))
+                            var exist = from d in dcliente where d.Ruta == (Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), "")) && d.Nombre == fichero.Name && d.Tamano == fichero.Length select d;
+
+
+                            if (exist.Count() > 0)
                             {
                                 tskip++;
                             }
@@ -620,7 +693,7 @@ namespace ServidoresData
                                         data.Mod = m.Nombre;
                                         data.Tamano = fichero.Length;
 
-                                        dcliente.Save(data);
+                                        dcliente.Add(data);
                                         
                                         tnew++;
                                     }
@@ -641,15 +714,15 @@ namespace ServidoresData
                     }
                 }
 
-                List<DBData> all = (from DBData p in dcliente.Container select p).ToList<DBData>();
+                //List<DBData> all = (from DBData p in dcliente.Container select p).ToList<DBData>();
 
                 CatalogModsProgress cp2 = new CatalogModsProgress();
-                cp2.TotalMods = all.Count();
+                cp2.TotalMods = dcliente.Count();
 
-                int tot = all.Count();
+                int tot = dcliente.Count();
                 int proc = 0;
 
-                foreach (DBData o in all)
+                foreach (DBData o in dcliente)
                 {
                     if (progress != null)
                     {
@@ -672,6 +745,8 @@ namespace ServidoresData
                         dcliente.Remove(o);
                     }
                 }
+
+                File.WriteAllText(bay.GetDirectoryForRepo(this.nombre).FullName + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));
 
                 CatalogoCompletedEventArgs c = new CatalogoCompletedEventArgs(null, false, null);
                 c.Total = tfiles;
@@ -753,7 +828,7 @@ namespace ServidoresData
                 targetdir.Create();
             }
            
-            var ficheros = from DBData data in dcliente.Container select data;
+            var ficheros = from DBData data in dcliente select data;
 
             int total = ficheros.Count();
             int cur = 0;
@@ -811,22 +886,36 @@ namespace ServidoresData
 
                        //log("Comparando catálogos.");
 
-                       dservidor = new db4oDB(nombre_bdd, "ficheros_servidor",false);
-                       dservidor.Open();
-                       dservidor.ReadDB();
+                       //dservidor = new db4oDB(nombre_bdd, "ficheros_servidor",false);
+                       //dservidor.Open();
+                       //dservidor.ReadDB();
 
+                       dservidor = new List<DBData>();
 
-                       List<DBData> enCliente = (from DBData f in dcliente.Container select f).ToList<DBData>();
-                       List<DBData> enServidor = (from DBData f in dservidor.Container select f).ToList<DBData>();
+                       string jsoncontent = "";
+
+                       if (File.Exists(nombre_bdd))
+                       {
+                           jsoncontent = File.ReadAllText(nombre_bdd);
+                       }
+
+                       if (jsoncontent.Length > 0)
+                       {
+                           dservidor = (List<DBData>)JsonConvert.DeserializeObject<List<DBData>>(jsoncontent);
+                       }
+                       
+
+                       //List<DBData> enCliente = (from DBData f in dcliente.Container select f).ToList<DBData>();
+                       //List<DBData> enServidor = (from DBData f in dservidor select f).ToList<DBData>();
 
 
                        //var distinctMD5 = enServidor.Except(enCliente, new FirmaMD5Comparer());
 
                        distinctMD5 = new List<DBData>();
 
-                       foreach(DBData s in enServidor)
+                       foreach(DBData s in dservidor)
                        {
-                           var c = from DBData cli in enCliente where cli.Ruta == s.Ruta && cli.Nombre == s.Nombre && cli.Firma != s.Firma select cli;
+                           var c = from DBData cli in dcliente where cli.Ruta == s.Ruta && cli.Nombre == s.Nombre && cli.Firma != s.Firma select cli;
 
                            if (c.Count() > 0)
                            {
@@ -840,8 +929,8 @@ namespace ServidoresData
                        }
 
                        //var distinctMD5 = (from DBData f in dcliente.Container select f).Except(enServidor, new FirmaMD5Comparer());
-                       var notInCliente = (from DBData f in enServidor select f).Except(enCliente, new RutaComparer());
-                       var notInServer = (from DBData f in enCliente select f).Except(enServidor, new RutaComparer());
+                       var notInCliente = (from DBData f in dservidor select f).Except(dcliente, new RutaComparer());
+                       var notInServer = (from DBData f in dcliente select f).Except(dservidor, new RutaComparer());
 
                        tnis = notInServer.Count();
                        tnic = notInCliente.Count();
@@ -865,7 +954,7 @@ namespace ServidoresData
                            DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p);
                            dc.Description = "Descargar " + nombre;
 
-                           dcliente.Save(r);
+                           dcliente.Add(r);
 
                            TasksToDo.Add(dc);
                        }
@@ -881,16 +970,16 @@ namespace ServidoresData
 
                            dc.Description = "Descargar " + nombre;
 
-                           var res = from DBData f in dcliente.Container where f.Ruta == r.Ruta && f.Nombre == r.Nombre select f;
+                           var res = from DBData f in dcliente where f.Ruta == r.Ruta && f.Nombre == r.Nombre select f;
 
                            foreach (DBData o in res)
                            {
                                o.Firma = r.Firma;
-                               dcliente.Save(o);
+                               dcliente.Add(o);
                            }
 
 
-                           dcliente.Save(r);
+                           dcliente.Add(r);
 
                            TasksToDo.Add(dc);
                         }
@@ -916,7 +1005,7 @@ namespace ServidoresData
 
                                    df.Description = "Elimininar " + nombre;
 
-                                   var res = from DBData f in dcliente.Container where f.Ruta == r.Ruta && f.Nombre == r.Nombre select f;
+                                   var res = from DBData f in dcliente where f.Ruta == r.Ruta && f.Nombre == r.Nombre select f;
 
                                    
                                    TasksToDo.Add(df);
@@ -934,7 +1023,7 @@ namespace ServidoresData
 
                                TasksToDo.Add(df);
 
-                               var res = from DBData f in dcliente.Container where f.Ruta == r.Ruta && f.Nombre == r.Nombre select f;
+                               var res = from DBData f in dcliente where f.Ruta == r.Ruta && f.Nombre == r.Nombre select f;
 
                                foreach (DBData o in res)
                                {
@@ -1016,6 +1105,18 @@ namespace ServidoresData
             */
 
             OnUpgradeRepositoryCompleted(e);
+
+            //File.Copy(bay.GetDirectoryForRepo(this.nombre) + @"\timestamp_" + this.nombre + ".txt", this.targetdir + @"\timestamp_" + this.nombre + ".txt");
+
+            string ccc = bay.GetDirectoryForRepo(this.nombre).FullName;
+
+            long sum = System.Convert.ToInt64(File.ReadAllText(ccc + @"\timestamp_" + this.nombre + ".txt"));
+
+            DateTime d = DateTime.FromBinary(sum);
+
+            File.Delete(ccc + @"\timestamp_" + this.nombre + ".txt");
+            File.WriteAllText(ccc + @"\timestamp_" + this.nombre + ".txt", d.AddDays(1).ToBinary().ToString());
+
         }
 
         
@@ -1174,7 +1275,7 @@ namespace ServidoresData
 
         public void CloseAll()
         {
-            dcliente.Disconnect();
+            //dcliente.Disconnect();
         }
 
         public List<string> GenerateModlist(string juego)
@@ -1188,11 +1289,11 @@ namespace ServidoresData
             
             fi = new FileInfo(Path.Combine(rbay.FullName, "ficheros.db4o"));
 
-            dcliente = new db4oDB(fi.FullName, "ficheros_cliente");
-            dcliente.ReadDB();
+            //dcliente = new db4oDB(fi.FullName, "ficheros_cliente");
+            //dcliente.ReadDB();
 
             
-            List<DBData> todos = (from DBData file in dcliente.Container select file).ToList<DBData>();
+            List<DBData> todos = (from DBData file in dcliente select file).ToList<DBData>();
 
             var unicos = todos.Distinct(new ModComparer());
 
@@ -1209,7 +1310,7 @@ namespace ServidoresData
 
         public virtual void Dispose()
         {            
-            dcliente.Disconnect();
+            //dcliente.Disconnect();
             dcliente = null;
             GC.SuppressFinalize(this);
         }

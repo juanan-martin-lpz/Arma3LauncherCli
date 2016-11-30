@@ -52,6 +52,8 @@ namespace ActualizaBDD
         string db_name;
         Servidor serv;
 
+        RepositoryProxy proxy;
+
         Repository re;
 
         DownloadProgress dp;
@@ -697,7 +699,9 @@ namespace ActualizaBDD
 
             Estado.Content = "Actualizando Mods";
 
-            serv = ((Servidor)lstServidores.SelectedItem != null ? (Servidor)lstServidores.SelectedItem : (Servidor)lstServidores.Items[0]);
+            //serv = ((Servidor)treeView.SelectedItem != null ? (Servidor)lstServidores.SelectedItem : (Servidor)lstServidores.Items[0]);
+
+            proxy = ((RepositoryProxy)treeView.SelectedItem != null ? (RepositoryProxy)treeView.SelectedItem : (RepositoryProxy)treeView.Items[0]);
 
             string carpeta_juego = "";
             string varma = radArma3.IsChecked == true ? "3" : "2";
@@ -710,7 +714,7 @@ namespace ActualizaBDD
             }
             else
             {
-                carpeta_juego = txtUserDefined.Text + @"/" + serv.Repository;
+                carpeta_juego = txtUserDefined.Text + @"/" + proxy.Nombre;
             }
 
             if (!Directory.Exists(carpeta_juego))
@@ -719,7 +723,10 @@ namespace ActualizaBDD
             }
 
             // Descargamos la base de datos del servidor y repositorio indicado
-            db_name = source.GetRepositoryCatalog(serv.Repository);
+
+            //Repository rn = repositories.GetRepository(proxy.Nombre);
+
+            db_name = source.GetRepositoryCatalog(proxy.Nombre);
 
             // Creamos una instancia del repositorio local
             Estado.Content = "Catalogando Mods";
@@ -738,8 +745,8 @@ namespace ActualizaBDD
 
             try
             {
-                logger.Info("Cargando el repositorio {0}", serv.Repository);
-                cliente = new Repository(carpeta_juego, bay, serv.Repository, mods);
+                logger.Info("Cargando el repositorio {0}", proxy.Nombre);
+                cliente = new Repository(carpeta_juego, bay, proxy.Nombre, mods);
 
                 logger.Info("Asignando manejadores de evento");
 
@@ -749,6 +756,8 @@ namespace ActualizaBDD
                 cliente.UpgradeRepositoryBeforeExecute += new Repository.UpgradeRepositoryBeforeExecuteEventHandler(updateTasks);
                 cliente.PlanProgressChanged += new Repository.PlanProgressChangedEventHandler(progresoPlan);
                 cliente.UpgradeRepositoryCompleted += new Repository.UpgradeRepositoryCompletedEventHandler(tareasCompletadas);
+
+                proxy.MustUpdate = false;
             }
             catch (Exception ex)
             {
@@ -763,7 +772,7 @@ namespace ActualizaBDD
                 
                 logger.Info("Iniciando el catalogo de addons");
 
-                cliente.CatalogFolderAsync(bay, serv.Repository, prg);
+                cliente.CatalogFolderAsync(bay, proxy.Nombre, prg);
             }
             catch (Exception ex)
             {
@@ -817,7 +826,7 @@ namespace ActualizaBDD
             logger.Info("Terminado el proceso de Catalogo");
             logger.Info("Iniciando el proceso de Comparacion");
 
-            cliente.CompareCatalogs(db_name, serv.Repository, source.Address);
+            cliente.CompareCatalogs(db_name, proxy.Nombre, source.Address);
             
 
         }
