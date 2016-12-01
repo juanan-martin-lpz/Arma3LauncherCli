@@ -69,11 +69,27 @@ namespace ServidoresData
 
                     newsum = System.Convert.ToDouble(File.ReadAllText(repofolder + @"\timestamp_" + r.Nombre + @".txt"));
 
+
                     r.MustUpdate = (oldsum <= newsum) ? true : false;
 
-                    if (File.Exists(repofolder + @"\timestamp_" + repo + @".old"))
+                    if (r.MustUpdate)
                     {
-                        File.Delete(repofolder + @"\timestamp_" + repo + @".old");
+                        if (File.Exists(repofolder + @"\timestamp_" + repo + @".old"))
+                        {
+                            File.Delete(repofolder + @"\timestamp_" + repo + @".old");
+                        }
+                    }
+                    else
+                    {
+                        if (File.Exists(repofolder + @"\timestamp_" + repo + @".old"))
+                        {
+                            File.Copy(repofolder + @"\timestamp_" + repo + @".old", repofolder + @"\timestamp_" + repo + @".new");
+                            File.Delete(repofolder + @"\timestamp_" + repo + @".txt");
+                            File.Delete(repofolder + @"\timestamp_" + repo + @".old");
+                            File.Copy(repofolder + @"\timestamp_" + repo + @".new", repofolder + @"\timestamp_" + repo + @".txt");
+                            File.Delete(repofolder + @"\timestamp_" + repo + @".new");
+
+                        }
                     }
                 }
             }

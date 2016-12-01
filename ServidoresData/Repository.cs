@@ -77,8 +77,10 @@ namespace ServidoresData
         bool _downloading = false;
 
         List<DBData> modsInRepo;
-        List<DBData> dcliente;
-        List<DBData> dservidor;
+        ObservableCollection<DBData> dcliente;
+        ObservableCollection<DBData> dservidor;
+
+        object locker = new object();
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -246,11 +248,11 @@ namespace ServidoresData
 
                 if (jsoncontent.Length > 0)
                 {
-                    dcliente = (List<DBData>)JsonConvert.DeserializeObject<List<DBData>>(jsoncontent);
+                    dcliente = (ObservableCollection<DBData>)JsonConvert.DeserializeObject<ObservableCollection<DBData>>(jsoncontent);
                 }
                 else
                 {
-                    dcliente = new List<DBData>();
+                    dcliente = new ObservableCollection<DBData>();
                 }
             }
             catch (Exception ex2)
@@ -320,7 +322,7 @@ namespace ServidoresData
                     modsInRepo = new List<DBData>();
                 }
 
-                dcliente = new List<DBData>();
+                dcliente = new ObservableCollection<DBData>();
 
                 //dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
                 //dcliente.Open();
@@ -393,7 +395,7 @@ namespace ServidoresData
                 {
                     modsInRepo = new List<DBData>();
                 }
-                dcliente = new List<DBData>();
+                dcliente = new ObservableCollection<DBData>();
 
                 //dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
                 //dcliente.Open();
@@ -722,6 +724,8 @@ namespace ServidoresData
                 int tot = dcliente.Count();
                 int proc = 0;
 
+                ObservableCollection<DBData> toRemove = new ObservableCollection<DBData>();
+
                 foreach (DBData o in dcliente)
                 {
                     if (progress != null)
@@ -742,8 +746,13 @@ namespace ServidoresData
 
                     if (!fil.Exists)
                     {
-                        dcliente.Remove(o);
+                        toRemove.Add(o);
                     }
+                }
+
+                foreach (DBData o in toRemove)
+                {
+                    dcliente.Remove(o);
                 }
 
                 File.WriteAllText(bay.GetDirectoryForRepo(this.nombre).FullName + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));
@@ -890,7 +899,7 @@ namespace ServidoresData
                        //dservidor.Open();
                        //dservidor.ReadDB();
 
-                       dservidor = new List<DBData>();
+                       dservidor = new ObservableCollection<DBData>();
 
                        string jsoncontent = "";
 
@@ -901,7 +910,7 @@ namespace ServidoresData
 
                        if (jsoncontent.Length > 0)
                        {
-                           dservidor = (List<DBData>)JsonConvert.DeserializeObject<List<DBData>>(jsoncontent);
+                           dservidor = (ObservableCollection<DBData>)JsonConvert.DeserializeObject<ObservableCollection<DBData>>(jsoncontent);
                        }
                        
 
@@ -968,8 +977,10 @@ namespace ServidoresData
                            IProgress<int> p1 = new Progress<int>();
                            DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p1);
 
+
                            dc.Description = "Descargar " + nombre;
 
+                           /*
                            var res = from DBData f in dcliente where f.Ruta == r.Ruta && f.Nombre == r.Nombre select f;
 
                            foreach (DBData o in res)
@@ -977,7 +988,7 @@ namespace ServidoresData
                                o.Firma = r.Firma;
                                dcliente.Add(o);
                            }
-
+                           */
 
                            dcliente.Add(r);
 
@@ -1140,6 +1151,7 @@ namespace ServidoresData
                     OnUpgradeRepositoryProgressChanged(e);
 
                     
+                    
 
                     if (c is DownloadFileCommand)
                     {
@@ -1150,7 +1162,9 @@ namespace ServidoresData
 
                             ez.Message = c.Description + " termino correctamente";
                             OnUpgradeRepositoryProgressChanged(ez);
-                            
+
+                            dc.DownloadFileCommandCompleted = new CommandBase.CommandCompletedEventHandler(downloadFileCompleted);
+
                             currents.Remove(c);
 
                             //pplan.Current++;
@@ -1181,28 +1195,21 @@ namespace ServidoresData
                     }
 
                     pplan.Current++;
+                    
+                    //pplan.ProgressPercentage = (pplan.Current * 100) / pplan.Total;
 
                     OnPlanProgress(this, pplan);
 
                     currents.Add(c);
 
-                    try
-                    {
-                        //sem.Wait();
+                       //sem.Wait();                    
 
-                        object locker = new object();
-
-                        lock (locker)
-                        {
-                            Monitor.Enter(c);
-                            c.Execute();
-                        }
-                    }
-                    finally
+                    lock (locker)
                     {
-                        //sem.Release();
-                        Monitor.Pulse(c);
+                        Monitor.Enter(c);
+                        c.Execute();
                     }
+                   
                 }
                 catch (Exception ex)
                 {
@@ -1219,10 +1226,20 @@ namespace ServidoresData
             NotifyPropertyChanged("Downloading");
         }
 
+        private void downloadFileCompleted(object sender, AsyncCompletedEventArgs e)
+        {
+            lock (locker)
+            {
+                Monitor.Pulse(locker);
+            }
+        }
+
         private void OnPlanProgress(object sender, PlanProgressEventArgs e)
         {
             if (PlanProgressChanged != null)
             {
+                NotifyPropertyChanged("Progreso");
+
                 PlanProgressChanged(this, e);
             }
         }
@@ -1265,6 +1282,15 @@ namespace ServidoresData
             var x = from f in d.GetFiles().AsEnumerable() where f.Name == "arma3.exe" select f;
 
             return x.Count() > 0 ? true : false;
+        }
+
+
+        public int Progreso
+        {
+            get
+            {
+                return pplan.ProgressPercentage;
+            }
         }
 
         public List<CommandBase> AllTasks

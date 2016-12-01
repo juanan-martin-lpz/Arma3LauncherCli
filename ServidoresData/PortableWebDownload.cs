@@ -178,8 +178,12 @@ namespace ServidoresData
                     }
 
                     file.Close();
+
+                    setDownloadFinished();
+
                     return true;
 
+                    
                 }
                 catch (Exception ex)
                 {
@@ -188,6 +192,8 @@ namespace ServidoresData
                     file.Close();
 
                     fi.Delete();
+
+                    canDownload = false;
 
                     downloadFinished(this, new AsyncCompletedEventArgs(ex, false, this));
 

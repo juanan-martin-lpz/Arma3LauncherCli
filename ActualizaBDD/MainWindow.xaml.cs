@@ -17,6 +17,7 @@ using Db4objects.Db4o.Linq;
 using NLog;
 using NLog.Targets;
 using Newtonsoft.Json;
+using System.Windows.Controls;
 
 namespace ActualizaBDD
 {    
@@ -695,12 +696,10 @@ namespace ActualizaBDD
 
             apagar_botones();
 
-            //this.lstServidores.IsEnabled = false;
-
             Estado.Content = "Actualizando Mods";
 
-            //serv = ((Servidor)treeView.SelectedItem != null ? (Servidor)lstServidores.SelectedItem : (Servidor)lstServidores.Items[0]);
-
+            TreeViewItem item = (TreeViewItem) treeView.ItemContainerGenerator.ContainerFromItem(treeView.SelectedItem);
+            
             proxy = ((RepositoryProxy)treeView.SelectedItem != null ? (RepositoryProxy)treeView.SelectedItem : (RepositoryProxy)treeView.Items[0]);
 
             string carpeta_juego = "";
@@ -723,14 +722,12 @@ namespace ActualizaBDD
             }
 
             // Descargamos la base de datos del servidor y repositorio indicado
-
-            //Repository rn = repositories.GetRepository(proxy.Nombre);
-
-            db_name = source.GetRepositoryCatalog(proxy.Nombre);
+             db_name = source.GetRepositoryCatalog(proxy.Nombre);
 
             // Creamos una instancia del repositorio local
             Estado.Content = "Catalogando Mods";
 
+            // Progreso de la actualizacion
             Progress<CatalogModsProgress> prg = new Progress<CatalogModsProgress>();
 
             if (prg != null)
@@ -750,11 +747,35 @@ namespace ActualizaBDD
 
                 logger.Info("Asignando manejadores de evento");
 
+                /**************************************************************************************************************************
+                 * 
+                 *              CatalogoCompleted
+                 *                      |
+                 *            CatalogoCompareComleted
+                 *                      |
+                 *        UpgradeRepositoryProgressChanged
+                 *             /                    \
+                 *            /                      \
+                 *      PlanProgressChanged     UpgradeRepositoryCompleted 
+                 *      
+                 * *************************************************************************************************************************/
+
+                // Catalogado de addons en equipo cliente
                 cliente.CatalogoCompleted += new Repository.CatalogoCompletedEventHandler(catalogcomplete);
+
+                // Comparacion de catalagos entre cliente y servidor
                 cliente.CatalogoCompareCompleted += new Repository.CatalogoCompareCompletedEventHandler(compareCompleted);
+
+                // Progreso de la actualizacion
                 cliente.UpgradeRepositoryProgressChanged += new Repository.UpgradeRepositoryProgressChangedEventHandler(updateTasks);
-                cliente.UpgradeRepositoryBeforeExecute += new Repository.UpgradeRepositoryBeforeExecuteEventHandler(updateTasks);
+
+                // Antes de invocar la actualizacion
+                //cliente.UpgradeRepositoryBeforeExecute += new Repository.UpgradeRepositoryBeforeExecuteEventHandler(updateTasks);
+
+                // Progreso global
                 cliente.PlanProgressChanged += new Repository.PlanProgressChangedEventHandler(progresoPlan);
+
+                // Actualizacion terminada
                 cliente.UpgradeRepositoryCompleted += new Repository.UpgradeRepositoryCompletedEventHandler(tareasCompletadas);
 
                 proxy.MustUpdate = false;
@@ -783,19 +804,19 @@ namespace ActualizaBDD
         }
 
         private void tareasCompletadas(object sender, AsyncCompletedEventArgs e)
-        {
-            logger.Info("Completado el proceso de Actualizacion de Addons");
+        {       
+                logger.Info("Completado el proceso de Actualizacion de Addons");
 
 
-            this.Dispatcher.Invoke(new System.Action(() =>
-            {
-                Estado.Content = "Terminado";
-                SubEstado.Content = "";
-                progreso.Value = 0;
-                this.lstServidores.IsEnabled = true;
+                this.Dispatcher.Invoke(new System.Action(() =>
+                {
+                    Estado.Content = "Terminado";
+                    SubEstado.Content = "";
+                    progreso.Value = 0;
+                    this.lstServidores.IsEnabled = true;
 
-                encender_botones();
-            }));
+                    encender_botones();
+                }));
         }
 
         private void compareCompleted(object sender, Repository.CatalogoCompareCompletedEventArgs e)
