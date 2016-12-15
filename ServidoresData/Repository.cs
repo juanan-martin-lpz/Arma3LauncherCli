@@ -190,14 +190,6 @@ namespace ServidoresData
             _downloading = false;
             sem = new SemaphoreSlim(12);
 
-            Console.WriteLine("Paso 1");
-
-            //FileTarget target = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
-            //string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + System.DateTime.Now.ToShortDateString() + ".txt";
-            //target.FileName = filename;
-
-            Console.WriteLine("Paso 2");
-
             basepath = folder;
             bay = Bay;
             nombre = Repo;
@@ -207,9 +199,6 @@ namespace ServidoresData
 
             modlist = new ObservableCollection<Mod>();
             _serverMods = Modlist;
-            //CatalogFolderAsync(Bay,Repo);
-
-            Console.WriteLine("Paso 4");
 
             DirectoryInfo baydir = bay.GetDirectoryForRepo(nombre);
 
@@ -221,20 +210,6 @@ namespace ServidoresData
             string dbfile = Path.Combine(bay.ToDirectoryInfo().FullName, nombre, "ficheros.db4o");
 
             string jsonfile = Path.Combine(Bay.ToDirectoryInfo().FullName, Repo, "ficheros.json");
-
-            /*
-            try
-            {
-                logger.Info("Se va a defragmentar la base de datos");
-                db4oDB.Defragment(dbfile, dbfile + ".backup");
-                logger.Info("Base de datos defragmentada con exito");
-            }
-            catch (Exception ex1)
-            {
-                logger.Fatal("Excepcion al defragmentar la base de datos : {0}", ex1.Message);
-                //throw ex1;
-            }
-            */
 
             try
             {
@@ -290,20 +265,6 @@ namespace ServidoresData
 
             string jsonfile = Path.Combine(Bay.ToDirectoryInfo().FullName, Repo, "ficheros.json");
 
-            /*
-            try
-            {
-                logger.Info("Se va a defragmentar la base de datos");
-                db4oDB.Defragment(dbfile, dbfile + ".backup");
-                logger.Info("Base de datos defragmentada con exito");
-            }
-            catch (Exception ex1)
-            {
-                logger.Fatal("Excepcion al defragmentar la base de datos : {0}", ex1.Message);
-                //throw ex1;
-            }
-            */
-
             try
             {
                 string jsoncontent = "";
@@ -324,9 +285,6 @@ namespace ServidoresData
 
                 dcliente = new ObservableCollection<DBData>();
 
-                //dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
-                //dcliente.Open();
-                //dcliente.ReadDB();
             }
             catch (Exception ex2)
             {
@@ -412,7 +370,19 @@ namespace ServidoresData
 
         public bool Downloading
         {
-            get { return _downloading;  }
+            get
+            {
+                if (TasksToDo != null)
+                {
+                    var tsk = from CommandBase b in TasksToDo where b.Finished == false select b;
+
+                    return tsk.Count() > 0 ? true : false;
+                }
+                else
+                {
+                    return false;
+                }
+            }
         }
         public List<Task> Tasks
         {
@@ -492,7 +462,7 @@ namespace ServidoresData
                     di.Create();
                 }
 
-                fi = new FileInfo(target + @"\ficheros.db4o");
+                //fi = new FileInfo(target + @"\ficheros.db4o");
 
                 var flist = from d in basedir.GetDirectories() where d.FullName.Contains("@") select d;
 
@@ -570,12 +540,6 @@ namespace ServidoresData
                     }
                 }
 
-
-                //List<DBData> enCliente = (from DBData f in dcliente.Container select f).ToList<DBData>();
-
-
-                File.WriteAllText(di + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));
-
                 CatalogoCompletedEventArgs c = new CatalogoCompletedEventArgs(null, false, null);
                 c.Total = tfiles;
                 c.NewFiles = tnew;
@@ -599,7 +563,7 @@ namespace ServidoresData
 
                 xxHash firma = null;
 
-                if (firma == null) { firma = new xxHash(); }
+                if (firma == null) { firma = new xxHash(64); }
 
                 //using (MD5 firma = MD5.Create())
                 using (FileStream streamFichero = File.OpenRead(fichero))
@@ -612,7 +576,7 @@ namespace ServidoresData
             }
             catch (Exception x)
             {
-                logger.Fatal("Error al calacular el Hash : {0}", x.Message);
+                logger.Fatal("Error al calcular el Hash : {0}", x.Message);
 
                 throw x;
             }
@@ -893,12 +857,6 @@ namespace ServidoresData
                    try
                    {
 
-                       //log("Comparando catálogos.");
-
-                       //dservidor = new db4oDB(nombre_bdd, "ficheros_servidor",false);
-                       //dservidor.Open();
-                       //dservidor.ReadDB();
-
                        dservidor = new ObservableCollection<DBData>();
 
                        string jsoncontent = "";
@@ -912,33 +870,9 @@ namespace ServidoresData
                        {
                            dservidor = (ObservableCollection<DBData>)JsonConvert.DeserializeObject<ObservableCollection<DBData>>(jsoncontent);
                        }
-                       
 
-                       //List<DBData> enCliente = (from DBData f in dcliente.Container select f).ToList<DBData>();
-                       //List<DBData> enServidor = (from DBData f in dservidor select f).ToList<DBData>();
-
-
-                       //var distinctMD5 = enServidor.Except(enCliente, new FirmaMD5Comparer());
-
-                       distinctMD5 = new List<DBData>();
-
-                       foreach(DBData s in dservidor)
-                       {
-                           var c = from DBData cli in dcliente where cli.Ruta == s.Ruta && cli.Nombre == s.Nombre && cli.Firma != s.Firma select cli;
-
-                           if (c.Count() > 0)
-                           {
-                               foreach (DBData d in c)
-                               {
-                                   Console.WriteLine(s.Ruta + "|" + d.Ruta + " - " + s.Nombre + "|" + d.Nombre + " - " + s.Firma + "|" + d.Firma);
-                               }
-
-                               distinctMD5.Add(s);
-                           }
-                       }
-
-                       //var distinctMD5 = (from DBData f in dcliente.Container select f).Except(enServidor, new FirmaMD5Comparer());
                        var notInCliente = (from DBData f in dservidor select f).Except(dcliente, new RutaComparer());
+                       var distinctMD5 = (from DBData f in dservidor select f).Except(dcliente, new FirmaMD5Comparer()).Except(notInCliente);
                        var notInServer = (from DBData f in dcliente select f).Except(dservidor, new RutaComparer());
 
                        tnis = notInServer.Count();
@@ -949,11 +883,9 @@ namespace ServidoresData
                         // notInServer -> Eliminate or Keep (User choice)
                         // distinctMD5 -> Update
 
-                        dlist = new ObservableCollection<WebDownloadAction>();
-
-                        //ficheros_a_descargar = notInCliente.Count() + distinctMD5.Count();
-                        //ficheros_a_borrar = notInServer.Count();
-
+                       dlist = new ObservableCollection<WebDownloadAction>();
+                       List<DBData> toAdd = new List<DBData>();
+                       
                        foreach (DBData r in notInCliente)
                        {
                            string ruta = r.Ruta;
@@ -963,37 +895,35 @@ namespace ServidoresData
                            DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p);
                            dc.Description = "Descargar " + nombre;
 
-                           dcliente.Add(r);
+                           //dcliente.Add(r);
+                           toAdd.Add(r);
 
                            TasksToDo.Add(dc);
                        }
-
 
                        foreach (DBData r in distinctMD5)
                        {
                            string ruta = r.Ruta;
                            string nombre = r.Nombre;
 
+                           IProgress<int> p = new Progress<int>();
+                           DeleteFileCommand df = new DeleteFileCommand(new FileInfo(basepath + @"\" + ruta + @"\" + nombre), p);
+
+                           df.Description = "Elimininar " + nombre;
+
+                           TasksToDo.Add(df);
+
                            IProgress<int> p1 = new Progress<int>();
                            DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p1);
 
-
                            dc.Description = "Descargar " + nombre;
 
-                           /*
-                           var res = from DBData f in dcliente where f.Ruta == r.Ruta && f.Nombre == r.Nombre select f;
-
-                           foreach (DBData o in res)
-                           {
-                               o.Firma = r.Firma;
-                               dcliente.Add(o);
-                           }
-                           */
-
-                           dcliente.Add(r);
+                           toAdd.Add(r);
 
                            TasksToDo.Add(dc);
                         }
+
+                       List<DBData> toRemove = new List<DBData>();
 
 
                        foreach (DBData r in notInServer)
@@ -1014,11 +944,15 @@ namespace ServidoresData
                                    IProgress<int> p = new Progress<int>();
                                    DeleteFileCommand df = new DeleteFileCommand(new FileInfo(basepath + @"\" + ruta + @"\" + nombre), p);
 
-                                   df.Description = "Elimininar " + nombre;
+                                   df.Description = "Eliminar " + nombre;
 
                                    var res = from DBData f in dcliente where f.Ruta == r.Ruta && f.Nombre == r.Nombre select f;
 
-                                   
+                                   foreach (DBData o in res)
+                                   {
+                                       toRemove.Add(o);
+                                   }
+
                                    TasksToDo.Add(df);
                                }
                            }
@@ -1038,16 +972,21 @@ namespace ServidoresData
 
                                foreach (DBData o in res)
                                {
-                                   dcliente.Remove(o);
-                               }
-
-                               
+                                   toRemove.Add(o);
+                               }                               
                            }
-
-                           DirectoryInfo di = new DirectoryInfo(basepath + @"\" + r.Ruta);
-
-                           deleteIfEmpty(di);
                        }
+
+                       foreach (DBData r in toAdd)
+                       {
+                           dcliente.Add(r);
+                       }
+
+                       foreach (DBData d in toRemove)
+                       {
+                           dcliente.Remove(d);
+                       }
+
 
                    }
                    catch (Exception ex)
@@ -1074,18 +1013,17 @@ namespace ServidoresData
         }
 
 
-        private void deleteIfEmpty(DirectoryInfo p)
+        private void deleteIfEmpty(string p)
         {
-            var fls = p.EnumerateFiles();
-            var drs = p.EnumerateDirectories();
-
-            if ((fls.Count() == 0) && (drs.Count() == 0))
+            foreach (var directory in Directory.GetDirectories(p))
             {
-                DirectoryInfo parent = p.Parent;
+                deleteIfEmpty(directory);
 
-                p.Delete();
-
-                deleteIfEmpty(parent);
+                if (Directory.GetFiles(directory).Length == 0 &&
+                    Directory.GetDirectories(directory).Length == 0)
+                {
+                    Directory.Delete(directory, false);
+                }
             }
         }
 
@@ -1096,38 +1034,8 @@ namespace ServidoresData
 
             PlanProgressChangedEventHandler plan = new PlanProgressChangedEventHandler(OnPlanProgress);
 
-            //sem = new SemaphoreSlim(0, 1);
-
-            //Task t = new Task(() =>
-            //{
-                commandList = new List<Task>();
-
-                //createTasks();
-                executeTasks();
-            //});
-
-            AsyncCompletedEventArgs e = new AsyncCompletedEventArgs(null, false, null);
-
-            /*
-            while (currents.Count > 0)
-            {
-                // do nothing
-            }
-            */
-
-            OnUpgradeRepositoryCompleted(e);
-
-            //File.Copy(bay.GetDirectoryForRepo(this.nombre) + @"\timestamp_" + this.nombre + ".txt", this.targetdir + @"\timestamp_" + this.nombre + ".txt");
-
-            string ccc = bay.GetDirectoryForRepo(this.nombre).FullName;
-
-            long sum = System.Convert.ToInt64(File.ReadAllText(ccc + @"\timestamp_" + this.nombre + ".txt"));
-
-            DateTime d = DateTime.FromBinary(sum);
-
-            File.Delete(ccc + @"\timestamp_" + this.nombre + ".txt");
-            File.WriteAllText(ccc + @"\timestamp_" + this.nombre + ".txt", d.AddDays(1).ToBinary().ToString());
-
+            commandList = new List<Task>();
+            executeTasks();            
         }
 
         
@@ -1150,26 +1058,44 @@ namespace ServidoresData
 
                     OnUpgradeRepositoryProgressChanged(e);
 
-                    
-                    
+                    if (c is DeleteFileCommand)
+                    {
+                        DeleteFileCommand df = (DeleteFileCommand)c;
+
+                        df.DeleteFileCommandCompleted += (s, ev) =>
+                        {
+                            TaskProgressProgressChanged ez = new TaskProgressProgressChanged(0, null);
+                            OnUpgradeRepositoryProgressChanged(ez);
+                        };
+
+                    }
+
 
                     if (c is DownloadFileCommand)
                     {
                         DownloadFileCommand dc = (DownloadFileCommand)c;
                         dc.DownloadFileCommandCompleted += (s, ev) =>
                         {
+                            AsyncCompletedEventArgs evento = (AsyncCompletedEventArgs)ev;
+
                             TaskProgressProgressChanged ez = new TaskProgressProgressChanged(0, null);
 
-                            ez.Message = c.Description + " termino correctamente";
+                            if (!evento.Cancelled)
+                            {
+                                ez.Message = c.Description + " termino correctamente";
+                            }
+                            else
+                            {
+                                ez.Message = c.Description + " ha fallado";
+                            }
+                            
                             OnUpgradeRepositoryProgressChanged(ez);
 
-                            dc.DownloadFileCommandCompleted = new CommandBase.CommandCompletedEventHandler(downloadFileCompleted);
+                            lock (locker)
+                            {
+                                Monitor.Pulse(locker);
+                            }
 
-                            currents.Remove(c);
-
-                            //pplan.Current++;
-
-                            //OnPlanProgress(this, pplan);
 
                         };
 
@@ -1196,43 +1122,62 @@ namespace ServidoresData
 
                     pplan.Current++;
                     
-                    //pplan.ProgressPercentage = (pplan.Current * 100) / pplan.Total;
-
-                    OnPlanProgress(this, pplan);
-
                     currents.Add(c);
-
-                       //sem.Wait();                    
 
                     lock (locker)
                     {
                         Monitor.Enter(c);
                         c.Execute();
                     }
-                   
+
+                    OnPlanProgress(this, pplan);
+
                 }
                 catch (Exception ex)
                 {
                     TaskProgressProgressChanged e = new TaskProgressProgressChanged(0, null);
                     e.Message = c.Description + " fallo: " + ex.Message;
 
+                    lock (locker)
+                    {
+                        Monitor.Pulse(locker);
+                    }
+
                     OnUpgradeRepositoryProgressChanged(e);
 
-                    sem.Release();
+
+                    //sem.Release();
                 }
             }
+
+                       
+            //AsyncCompletedEventArgs eve = new AsyncCompletedEventArgs(null, false, null);
+            //OnUpgradeRepositoryCompleted(eve);
+
+            deleteIfEmpty(basepath);
 
             _downloading = false;
             NotifyPropertyChanged("Downloading");
         }
 
+        /*
         private void downloadFileCompleted(object sender, AsyncCompletedEventArgs e)
         {
+
+            var tsk = from CommandBase b in TasksToDo where b.Finished == false select b;
+
+            if (tsk.Count() == 0)
+            {
+                AsyncCompletedEventArgs ev = new AsyncCompletedEventArgs(null, false, null);
+                OnUpgradeRepositoryCompleted(ev);
+            }
+
             lock (locker)
             {
                 Monitor.Pulse(locker);
             }
         }
+        */
 
         private void OnPlanProgress(object sender, PlanProgressEventArgs e)
         {
@@ -1261,6 +1206,18 @@ namespace ServidoresData
 
         protected void OnUpgradeRepositoryCompleted(AsyncCompletedEventArgs e)
         {
+
+            DirectoryInfo di = bay.GetDirectoryForRepo(nombre);
+
+
+            if (File.Exists(di.FullName + @"\ficheros.json"))
+            {
+                File.Delete(di.FullName + @"\ficheros.json");
+            }
+
+            File.WriteAllText(di.FullName + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));
+
+
             if (UpgradeRepositoryCompleted != null)
             {
                 UpgradeRepositoryCompleted(this, e);
@@ -1273,6 +1230,15 @@ namespace ServidoresData
             {          
                 UpgradeRepositoryProgressChanged(this, e);
             }
+
+            List<CommandBase>_list = new ObservableCollection<CommandBase>((from CommandBase c in TasksToDo where c.Progreso < 100 select c)).ToList<CommandBase>();
+
+            if (_list.Count == 0)
+            {
+                AsyncCompletedEventArgs eve = new AsyncCompletedEventArgs(null, false, null);
+                OnUpgradeRepositoryCompleted(eve);
+            }
+
         }
 
         public static  bool IsDefaultFolder(string folder)
@@ -1340,5 +1306,19 @@ namespace ServidoresData
             dcliente = null;
             GC.SuppressFinalize(this);
         }
+
+        /*
+        public void DownloadModForced(string mod)
+        {
+            foreach (DBData d in modsInRepo)
+            {
+                if (d.Mod == mod)
+                {
+                    IProgress<int> p1 = new Progress<int>();
+                    //DownloadFileCommand dc = new DownloadFileCommand(srv, nombre, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p1);
+                }
+            }    
+        }
+        */
     }
 }

@@ -112,13 +112,6 @@ namespace ServidoresData
 
             Uri URL = urlAddress.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ? new Uri(urlAddress) : new Uri("http://" + urlAddress);
 
-            //Action<int, int, int> onProgress = setDownloadProgress;
-            //Action onFinish = setDownloadFinished;
-            
-            
-
-            //await sem.WaitAsync();
-
             Console.WriteLine("Preparando descarga...");
 
             FileInfo fi = new FileInfo(_target);
@@ -139,14 +132,13 @@ namespace ServidoresData
             catch (Exception ex)
             {
                 Console.WriteLine("Ha ocurrido un error al descargar el fichero {0} : {1} ", _fname, ex.Message);
+                return false;
             }
 
             
 
             using (HttpClient client = new HttpClient())
             {
-                //Console.WriteLine("Threads libres : {0}", 6 - sem.CurrentCount);
-
                 FileStream file = new FileStream(_target, FileMode.Create);
 
                 int pos = 1;
@@ -163,7 +155,6 @@ namespace ServidoresData
                         Console.WriteLine("Esperando respuesta de servidor");
 
                         result = await dw.GetByteArrayAsync();
-
 
                         Console.WriteLine("Leidos {0} bytes", result.Item1);
 
@@ -195,7 +186,7 @@ namespace ServidoresData
 
                     canDownload = false;
 
-                    downloadFinished(this, new AsyncCompletedEventArgs(ex, false, this));
+                    downloadFinished(this, new AsyncCompletedEventArgs(ex, true, this));
 
                     //Console.WriteLine("Threads libres : {0}", 6 - sem.CurrentCount);
 

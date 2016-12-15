@@ -48,6 +48,8 @@ namespace ServidoresData
         protected CommandBeforeExecuteEventArgs beforeexecargs;
         protected Progress<int> _prg;
 
+        protected bool _finished;
+
         public string Description { get; set; }
 
         public CommandBase(IProgress<int> prg)
@@ -55,6 +57,8 @@ namespace ServidoresData
             completedargs = new CommandCompletedEventArgs(null, false, null);
             beforeexecargs = new CommandBeforeExecuteEventArgs(null, false, null);
             _prg = (Progress<int>) prg;
+
+            _finished = false;
         }
 
         public virtual void Execute()
@@ -76,12 +80,17 @@ namespace ServidoresData
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private void NotifyPropertyChanged(String propertyName)
+        protected void NotifyPropertyChanged(String propertyName)
         {
             if (PropertyChanged != null)
             {
                 PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
+        }
+
+        public bool Finished
+        {
+            get { return _finished; }
         }
 
     }

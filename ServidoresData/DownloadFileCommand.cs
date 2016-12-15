@@ -21,18 +21,26 @@ namespace ServidoresData
 
         public DownloadFileCommand(string Server, string Repo, string Filename, string Target, IProgress<int> p) : base(p)
         {
-            wd = new PortableWebDownload(Server, Repo, Filename, Target);
-            wd.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadCompleted);
-            wd.DownloadProgressChanged += new ProgressChangedEventHandler(ProgressChanged);
-            wd.WebDownloadProgressChanged += new ProgressChangedEventHandler(OnWebDownloadProgressChange);
+            try
+            {
+                wd = new PortableWebDownload(Server, Repo, Filename, Target);
+                wd.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadCompleted);
+                wd.DownloadProgressChanged += new ProgressChangedEventHandler(ProgressChanged);
 
+                //wd.WebDownloadProgressChanged += new ProgressChangedEventHandler(OnWebDownloadProgressChange);
 
-            _prg = (Progress<int>)p;
+                _prg = (Progress<int>)p;
+            }
+            catch (Exception ex)
+            {
+                _finished = true;
+                Progreso = 100;
+                throw ex;
+            }       
 
-            
         }
 
-        public async override void Execute()
+        public override void Execute()
         {
             beforeexecargs.Server = wd.Server;
             beforeexecargs.Repo = wd.Repository;
@@ -41,17 +49,43 @@ namespace ServidoresData
 
             OnDownloadFileBeforeExecute();
 
-
-            //sem.Wait();
-
-            bool result = await wd.DownloadAsync().ConfigureAwait(true);
-
-            
-            if (!result)
+            try
             {
-                Console.WriteLine("La descarga del fichero {0} ha fallado", wd.Filename);
+                Task<bool> t1 = wd.DownloadAsync().ContinueWith<bool>((prev) =>
+                {
+                   bool result = prev.Result;
+
+                   if (!result)
+                   {
+                       Progreso = 100;
+                       NotifyPropertyChanged("Progreso");
+
+                       _finished = true;
+
+                       Console.WriteLine("La descarga del fichero {0} ha fallado", wd.Filename);
+                       DownloadCompleted(this, new AsyncCompletedEventArgs(null, true, this));
+                   }
+
+                   Progreso = 100;
+
+                    return result;
+                });
+
+                t1.Start();
+
+                t1.Wait();
+
+                
             }
-            
+            catch (Exception ex)
+            {
+                Progreso = 100;
+                NotifyPropertyChanged("Progreso");
+
+                _finished = true;
+
+                Console.WriteLine("La descarga del fichero {0} ha fallado", wd.Filename);
+            }                 
         }
 
         
@@ -60,15 +94,31 @@ namespace ServidoresData
             
             IProgress<int> prg = (IProgress<int>)_prg;
 
-            
+            Progreso = e.ProgressPercentage;
+            NotifyPropertyChanged("Progreso");
             prg.Report(e.ProgressPercentage);
         }
 
         private void DownloadCompleted(object sender, AsyncCompletedEventArgs e)
         {
             //sem.Release();
-            completedargs.Message = wd.Filename + @" descargado con exito";
+
+            _finished = true;
+
+            if (e.Cancelled)
+            {
+                completedargs = new CommandCompletedEventArgs(null, true, this);
+                completedargs.Message = wd.Filename + @" ha fallado";
+
+            }
+            else
+            {
+                completedargs = new CommandCompletedEventArgs(null, false, this);
+                completedargs.Message = wd.Filename + @" descargado con exito";
+            }
+
             OnDownloadFileCommandCompleted();
+
         }
 
         private void OnDownloadFileCommandCompleted()
@@ -87,6 +137,9 @@ namespace ServidoresData
             }
         }
 
+        
+
+        /*
         private void OnWebDownloadProgressChange(object sender, ProgressChangedEventArgs e)
         {
             
@@ -95,5 +148,6 @@ namespace ServidoresData
             prg.Report(e.ProgressPercentage);
 
         }
+        */
     }
 }

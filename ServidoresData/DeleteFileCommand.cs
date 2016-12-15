@@ -17,17 +17,33 @@ namespace ServidoresData
             f = file;
         }
 
+        public DirectoryInfo Path
+        {
+            get
+            {
+                return f.Directory;
+            }
+        }
+
         public override void Execute()
         {
 
             f.Delete();
 
+            Progreso = 100;
+
             completedargs.Message = f.Name + @" eliminado con exito";
+
+            _finished = true;
+
             OnDeleteFileCompleted();
         }
         
         private void OnDeleteFileCompleted()
         {
+            Progreso = 100;
+            _finished = true;
+
             if (DeleteFileCommandCompleted != null)
             {
                 DeleteFileCommandCompleted(this, completedargs);

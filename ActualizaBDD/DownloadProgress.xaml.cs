@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Collections.ObjectModel;
 using ServidoresData;
+using System.ComponentModel;
 
 namespace ActualizaBDD
 {
@@ -21,7 +22,7 @@ namespace ActualizaBDD
     /// </summary>
     public partial class DownloadProgress : Window
     {
-        List<CommandBase> _list;
+        ObservableCollection<CommandBase> _list;
         Repository repo;  
 
         
@@ -30,21 +31,32 @@ namespace ActualizaBDD
         {
             InitializeComponent();
 
-            _list = r.AllTasks;
+           
+           
+            _list = new ObservableCollection<CommandBase>((from CommandBase c in r.AllTasks where c.Progreso < 100 orderby c.Progreso descending select c).ToList<CommandBase>());
 
-            this.DataContext = _list;
+            listView.ItemsSource = _list;
 
             repo = r;
+
 
             listView.ItemsSource = from d in _list select d;
 
             listView.Items.MoveCurrentToFirst();
 
+            r.PlanProgressChanged += (se, ev) =>
+            {
+                this.Dispatcher.Invoke(new Action(() =>
+                {
+                    this.Title = "Progreso de Descarga (" + ev.Current + @"/" + repo.AllTasks.Count.ToString() + ")";
+                }));
+            };
+
             r.UpgradeRepositoryProgressChanged += (s, e) =>
             {
                 this.Dispatcher.Invoke(new Action(() =>
                 {
-
+                    /*
                     listView.Items.MoveCurrentTo(e.UserState);
 
                     CommandBase b = (CommandBase)listView.SelectedItem;
@@ -53,7 +65,14 @@ namespace ActualizaBDD
                     {
                         b.Progreso = e.ProgressPercentage;
                     }
+                    */
 
+                    _list = new ObservableCollection<CommandBase>((from CommandBase c in r.AllTasks where c.Progreso < 100 orderby c.Progreso descending select c).ToList<CommandBase>());
+
+                    listView.ItemsSource = _list;
+
+                    ICollectionView view = CollectionViewSource.GetDefaultView(listView.ItemsSource);
+                    view.Refresh();
                 }));
             };
         }

@@ -69,11 +69,9 @@ namespace ServidoresData
 
 
         public async Task<Tuple<long, byte[]>> GetByteArrayAsync()
-        {
-            
-                
-                
-                while (responseStream.CanRead)
+        {            
+
+            while (responseStream.CanRead)
                 {
                     //buffer = null;
                     //buffer = new byte[BUFFER_SIZE];
@@ -96,11 +94,12 @@ namespace ServidoresData
                         Console.WriteLine("Leidos {0} bytes de {1}", totalreaded, bytesTotal);
 
                         DownloadAsyncProgressChangedEventArgs e = new DownloadAsyncProgressChangedEventArgs((int) percent, this);
+
                         OnDownloadProgress(this, e);
                             
                     }
 
-                    if (totalreaded == bytesTotal)
+                    if ((totalreaded == bytesTotal) && (totalreaded > 0))
                     {
                         if (OnDownloadFinished != null)
                         {
@@ -121,7 +120,7 @@ namespace ServidoresData
         public async Task<Tuple<long, byte[]>> GetByteArrayAsyncWithProgress(string requestUri, object sender)
         {
 
-            System.Console.WriteLine("Maximo buufer de respuesta : {0}", client.MaxResponseContentBufferSize);
+            System.Console.WriteLine("Maximo buffer de respuesta : {0}", client.MaxResponseContentBufferSize);
 
             using (var response = await client.GetAsync(requestUri,HttpCompletionOption.ResponseHeadersRead))
             {
@@ -151,7 +150,6 @@ namespace ServidoresData
                                     bytesTotal = 0;
                             }
                         }
-
                         //megaBytesTotal = megaBytes(bytesTotal);
                     }
                     catch (Exception)
@@ -176,7 +174,7 @@ namespace ServidoresData
 
                             if (OnDownloadProgress != null)
                             {
-                                if ((bytesRead > 0) && (bytesTotal >0))
+                                if ((bytesRead > 0) && (bytesTotal > 0))
                                 {
                                     percent = (int)(bytesRead * 100) / bytesTotal;
                                 }
@@ -184,7 +182,6 @@ namespace ServidoresData
                                 {
                                     percent = 0;
                                 }
-                                
 
                                 DownloadAsyncProgressChangedEventArgs e = new DownloadAsyncProgressChangedEventArgs((int)percent, sender);
                                 OnDownloadProgress(sender, e);

@@ -48,6 +48,14 @@ namespace ServidoresData
 
                     WinWebDownload dltstamp = new WinWebDownload();
 
+                    if (!File.Exists(repofolder + @"\timestamp_" + repo + @".txt"))
+                    {
+                        r.MustUpdate = true;
+                        dltstamp.DownloadFile(webrepository, repo + @"/timestamp.txt", repofolder + @"\timestamp_" + repo + @".txt");
+                        continue;
+                    }
+
+                    /*
                     if (File.Exists(repofolder + @"\timestamp_" + repo + @".txt"))
                     {
                         File.Copy(repofolder + @"\timestamp_" + repo + @".txt", repofolder + @"\timestamp_" + repo + @".old");
@@ -55,41 +63,28 @@ namespace ServidoresData
                     }
                     else
                     {
-                        r.MustUpdate = true;
-                        dltstamp.DownloadFile(webrepository, repo + @"/timestamp.txt", repofolder + @"\timestamp_" + repo + @".txt");
-                        continue;
                     }
+                    */
 
-                    dltstamp.DownloadFile(webrepository, repo + @"/timestamp.txt", repofolder + @"\timestamp_" + repo + @".txt");
-
-                    if (File.Exists(repofolder + @"\timestamp_" + r.Nombre + @".old"))
-                    {
-                        oldsum = System.Convert.ToDouble(File.ReadAllText(bay.GetDirectoryForRepo(r.Nombre).FullName + @"\timestamp_" + r.Nombre + @".old"));
-                    }
-
-                    newsum = System.Convert.ToDouble(File.ReadAllText(repofolder + @"\timestamp_" + r.Nombre + @".txt"));
+                    dltstamp.DownloadFile(webrepository, repo + @"/timestamp.txt", repofolder + @"\timestamp_" + repo + @".new");
+                    
+                    oldsum = System.Convert.ToDouble(File.ReadAllText(bay.GetDirectoryForRepo(r.Nombre).FullName + @"\timestamp_" + r.Nombre + @".txt"));
+                    
+                    newsum = System.Convert.ToDouble(File.ReadAllText(repofolder + @"\timestamp_" + r.Nombre + @".new"));
 
 
-                    r.MustUpdate = (oldsum <= newsum) ? true : false;
+                    r.MustUpdate = (newsum > oldsum) ? true : false;
 
                     if (r.MustUpdate)
                     {
-                        if (File.Exists(repofolder + @"\timestamp_" + repo + @".old"))
-                        {
-                            File.Delete(repofolder + @"\timestamp_" + repo + @".old");
-                        }
+                        File.Copy(repofolder + @"\timestamp_" + repo + @".txt", repofolder + @"\timestamp_" + repo + @".old");
+                        File.Delete(repofolder + @"\timestamp_" + repo + @".old");
+                        File.Copy(repofolder + @"\timestamp_" + repo + @".new", repofolder + @"\timestamp_" + repo + @".txt");
+                        File.Delete(repofolder + @"\timestamp_" + repo + @".new");
                     }
                     else
                     {
-                        if (File.Exists(repofolder + @"\timestamp_" + repo + @".old"))
-                        {
-                            File.Copy(repofolder + @"\timestamp_" + repo + @".old", repofolder + @"\timestamp_" + repo + @".new");
-                            File.Delete(repofolder + @"\timestamp_" + repo + @".txt");
-                            File.Delete(repofolder + @"\timestamp_" + repo + @".old");
-                            File.Copy(repofolder + @"\timestamp_" + repo + @".new", repofolder + @"\timestamp_" + repo + @".txt");
-                            File.Delete(repofolder + @"\timestamp_" + repo + @".new");
-
-                        }
+                        File.Delete(repofolder + @"\timestamp_" + repo + @".new");
                     }
                 }
             }

@@ -19,6 +19,31 @@ using NLog.Targets;
 using Newtonsoft.Json;
 using System.Windows.Controls;
 
+/*************************************************************************************************************************************************
+ * 
+ * Version 2.1.1 Development -> 2.1.2 Stable
+ *      NUEVO
+ *          Se sustituye el treeview de los Addons por dos ListView sincronizados
+ *          Actualizacion individual e imperativa de Addons a traves de la lista de addons por repositorio
+ *          Se filtra la lista de descargas para mostrar las descargas en progreso y las no iniciadas
+ *          No se deshabilita el boton de actualizar addons permitiendo clicarle de nuevo      
+ *      
+ *      BUGS SOLUCIONADOS
+ *          Problema con los timestamps que no daba como actualizado un repositorio correcto (No comprobado)
+ *          Sincronizacion de los eventos al actualizar un repositorio
+ *          Ahora se eliminan los directorios de los mods no usados para el repo
+ * 
+ * Version 2.1.3 Development -> 2.1.4 Stable
+ *      NUEVO
+ *          Reimplementacion Lanzador Xpress
+ *          Borrado completo de addons no usados si la configuracion es Definida por el Usuario
+ *          Comprobacion de un Addon contra la vista del servidor
+ *               
+ *      BUGS SOLUCIONADOS
+ * 
+ * 
+ * ***********************************************************************************************************************************************/
+
 namespace ActualizaBDD
 {    
     /// <summary>
@@ -146,7 +171,8 @@ namespace ActualizaBDD
             
             if ((repositories != null) && (repositories.RepositoryProxyList != null))
             {
-                treeView.ItemsSource = repositories.RepositoryProxyList;
+                lstRepositorios.ItemsSource = repositories.RepositoryProxyList;
+                //lstMods.ItemsSource = (lstRepositorios.Items[0] as RepositoryProxy).Mods;
             }
 
             //rs = new Repositories(rpath);
@@ -402,6 +428,7 @@ namespace ActualizaBDD
             Task t_final = t1.ContinueWith(
             ant =>
             {
+
                 encender_botones();
             }, TaskScheduler.FromCurrentSynchronizationContext());
 
@@ -698,9 +725,8 @@ namespace ActualizaBDD
 
             Estado.Content = "Actualizando Mods";
 
-            TreeViewItem item = (TreeViewItem) treeView.ItemContainerGenerator.ContainerFromItem(treeView.SelectedItem);
             
-            proxy = ((RepositoryProxy)treeView.SelectedItem != null ? (RepositoryProxy)treeView.SelectedItem : (RepositoryProxy)treeView.Items[0]);
+            proxy = ((RepositoryProxy)lstRepositorios.SelectedItem != null ? (RepositoryProxy)lstRepositorios.SelectedItem : (RepositoryProxy)lstRepositorios.Items[0]);
 
             string carpeta_juego = "";
             string varma = radArma3.IsChecked == true ? "3" : "2";
@@ -743,6 +769,12 @@ namespace ActualizaBDD
             try
             {
                 logger.Info("Cargando el repositorio {0}", proxy.Nombre);
+
+                if (cliente != null)
+                {
+                    cliente = null;
+                }
+
                 cliente = new Repository(carpeta_juego, bay, proxy.Nombre, mods);
 
                 logger.Info("Asignando manejadores de evento");
@@ -994,5 +1026,15 @@ namespace ActualizaBDD
             }
             
         }
+
+        private void lstRepositorios_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            RepositoryProxy r = (RepositoryProxy) lstRepositorios.SelectedItem;
+
+            if (r != null)
+            {
+                lstMods.ItemsSource = r.Mods;
+            }
+        }        
     }
 }

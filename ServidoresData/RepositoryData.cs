@@ -141,13 +141,14 @@ namespace ServidoresData
             //Check whether the objects are the same object. 
             if (Object.ReferenceEquals(a, b)) return true;
 
-            if ((a.Ruta == b.Ruta) && (a.Nombre == b.Nombre) && (a.Firma == b.Firma))
+            // ((a.Ruta == b.Ruta) && (a.Nombre == b.Nombre) && (a.Firma == b.Firma))
+            if (a.Firma == b.Firma)
             {
                 return true;
             }
             else
             {
-                //Console.WriteLine(a.Ruta + "|" + b.Ruta + " - " + a.Nombre + "|" + b.Nombre + " - " + a.Firma + "|" + b.Firma);
+                Console.WriteLine(a.Ruta + "|" + b.Ruta + " - " + a.Nombre + "|" + b.Nombre + " - " + a.Firma + "|" + b.Firma);
                 return false;
             }
         }
