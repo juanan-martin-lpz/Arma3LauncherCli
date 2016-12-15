@@ -719,7 +719,7 @@ namespace ServidoresData
                     dcliente.Remove(o);
                 }
 
-                File.WriteAllText(bay.GetDirectoryForRepo(this.nombre).FullName + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));
+                //File.WriteAllText(bay.GetDirectoryForRepo(this.nombre).FullName + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));
 
                 CatalogoCompletedEventArgs c = new CatalogoCompletedEventArgs(null, false, null);
                 c.Total = tfiles;
@@ -1004,6 +1004,15 @@ namespace ServidoresData
                 c.NotInServer = tnis;
                 c.DistinctSignature = tdsig;
 
+                DirectoryInfo di = bay.GetDirectoryForRepo(nombre);
+
+                if (File.Exists(di.FullName + @"\ficheros.json"))
+                {
+                    File.Delete(di.FullName + @"\ficheros.json");
+                }
+
+                File.WriteAllText(di.FullName + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));
+
                 OnCatalogCompareCompleted(c);
             });
 
@@ -1206,17 +1215,6 @@ namespace ServidoresData
 
         protected void OnUpgradeRepositoryCompleted(AsyncCompletedEventArgs e)
         {
-
-            DirectoryInfo di = bay.GetDirectoryForRepo(nombre);
-
-
-            if (File.Exists(di.FullName + @"\ficheros.json"))
-            {
-                File.Delete(di.FullName + @"\ficheros.json");
-            }
-
-            File.WriteAllText(di.FullName + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));
-
 
             if (UpgradeRepositoryCompleted != null)
             {

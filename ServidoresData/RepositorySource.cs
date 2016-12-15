@@ -65,7 +65,9 @@ namespace ServidoresData
             string nombre_bdd = Path.GetTempPath() + "ficheros_" + DateTime.Now.Ticks + ".db4o";
 
             WinWebDownload dl = new WinWebDownload();
-            dl.DownloadFile(webrepository, repo + @"/ficheros.json", nombre_bdd);            
+            dl.DownloadFile(webrepository, repo + @"/ficheros.json", nombre_bdd);
+
+            dl = null;
 
             return nombre_bdd;
         }

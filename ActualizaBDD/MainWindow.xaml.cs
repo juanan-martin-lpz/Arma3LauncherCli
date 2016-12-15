@@ -24,7 +24,6 @@ using System.Windows.Controls;
  * Version 2.1.1 Development -> 2.1.2 Stable
  *      NUEVO
  *          Se sustituye el treeview de los Addons por dos ListView sincronizados
- *          Actualizacion individual e imperativa de Addons a traves de la lista de addons por repositorio
  *          Se filtra la lista de descargas para mostrar las descargas en progreso y las no iniciadas
  *          No se deshabilita el boton de actualizar addons permitiendo clicarle de nuevo      
  *      
@@ -38,6 +37,7 @@ using System.Windows.Controls;
  *          Reimplementacion Lanzador Xpress
  *          Borrado completo de addons no usados si la configuracion es Definida por el Usuario
  *          Comprobacion de un Addon contra la vista del servidor
+ *          Actualizacion individual e imperativa de Addons a traves de la lista de addons por repositorio
  *               
  *      BUGS SOLUCIONADOS
  * 
