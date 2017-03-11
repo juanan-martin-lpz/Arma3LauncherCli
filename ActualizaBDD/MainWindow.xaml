@@ -305,7 +305,7 @@
 
         </TabControl>
         <Button Content="Salir" FontWeight="Bold" Height="27" HorizontalAlignment="Right" Margin="0,371,10,0" Name="btnSalir" VerticalAlignment="Top" Width="150" Click="btnSalir_Click" />
-        <StatusBar Height="42" Margin="0,412,0,0" VerticalAlignment="Top" DockPanel.Dock="Bottom" HorizontalAlignment="Left" Width="713" RenderTransformOrigin="0.487,0.529" Background="{x:Null}">
+        <StatusBar Name="status" Height="42" Margin="0,412,0,0" VerticalAlignment="Top" DockPanel.Dock="Bottom" HorizontalAlignment="Left" Width="713" RenderTransformOrigin="0.487,0.529" Background="{x:Null}">
             <StatusBar.ItemsPanel>
                 <ItemsPanelTemplate>
                     <Grid>

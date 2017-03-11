@@ -13,11 +13,12 @@ using System.Collections.ObjectModel;
 using ServidoresData;
 using System.Text.RegularExpressions;
 using System.Threading;
-using Db4objects.Db4o.Linq;
 using NLog;
 using NLog.Targets;
 using Newtonsoft.Json;
 using System.Windows.Controls;
+
+
 
 /*************************************************************************************************************************************************
  * 
@@ -25,7 +26,8 @@ using System.Windows.Controls;
  *      NUEVO
  *          Se sustituye el treeview de los Addons por dos ListView sincronizados
  *          Se filtra la lista de descargas para mostrar las descargas en progreso y las no iniciadas
- *          No se deshabilita el boton de actualizar addons permitiendo clicarle de nuevo      
+ *          No se deshabilita el boton de actualizar addons permitiendo clicarle de nuevo 
+ *          Borrado completo de addons no usados si la configuracion es Definida por el Usuario     
  *      
  *      BUGS SOLUCIONADOS
  *          Problema con los timestamps que no daba como actualizado un repositorio correcto (No comprobado)
@@ -34,14 +36,22 @@ using System.Windows.Controls;
  * 
  * Version 2.1.3 Development -> 2.1.4 Stable
  *      NUEVO
- *          Reimplementacion Lanzador Xpress
- *          Borrado completo de addons no usados si la configuracion es Definida por el Usuario
+ *          Reimplementacion Lanzador Xpress       
  *          Comprobacion de un Addon contra la vista del servidor
  *          Actualizacion individual e imperativa de Addons a traves de la lista de addons por repositorio
+ *          Ejecucion scripts pre/post actualizacion
  *               
  *      BUGS SOLUCIONADOS
  * 
  * 
+ * Version 2.1.5 Development -> 2.1.6 Stable
+ *      NUEVO
+ *          Descarga de archivos necesarios a traves de websocket y aplicacion de servidor
+ *          Configuracion de servidores en formato JSON
+ *              
+ *      BUGS SOLUCIONADOS
+ *      
+ *      
  * ***********************************************************************************************************************************************/
 
 namespace ActualizaBDD
@@ -177,16 +187,22 @@ namespace ActualizaBDD
 
             //rs = new Repositories(rpath);
 
+            // Aqui habria que avisar de que se esta descargando el archivo
+
             // La idea es hacerlo en repositorysource
             wbm = new WebDownload();
             wbm.DownloadFileCompleted += new AsyncCompletedEventHandler(ModlistCompleted);
             wbm.DownloadFileAsync(webrepository, "/modlist.txt", fpath);
 
-            logger.Info("modlist.txt descargado correctamente");
         }
 
-        private void ModlistCompleted(object sender, AsyncCompletedEventArgs e)
+        //private void ModlistCompleted(object sender, AsyncCompletedEventArgs e)
+
+
+        private void ModlistCompleted(object sender, EventArgs e)
         {
+            logger.Info("modlist.txt descargado correctamente");
+
             readModList();
 
             logger.Info("modlist.txt cargado correctamente");
@@ -810,7 +826,9 @@ namespace ActualizaBDD
                 // Actualizacion terminada
                 cliente.UpgradeRepositoryCompleted += new Repository.UpgradeRepositoryCompletedEventHandler(tareasCompletadas);
 
-                proxy.MustUpdate = false;
+                
+
+                //proxy.MustUpdate = false;
             }
             catch (Exception ex)
             {
@@ -837,18 +855,17 @@ namespace ActualizaBDD
 
         private void tareasCompletadas(object sender, AsyncCompletedEventArgs e)
         {       
-                logger.Info("Completado el proceso de Actualizacion de Addons");
+            logger.Info("Completado el proceso de Actualizacion de Addons");
 
+            this.Dispatcher.Invoke(new System.Action(() =>
+            {
+                Estado.Content = "Terminado";
+                SubEstado.Content = "";
+                progreso.Value = 0;
+                this.lstServidores.IsEnabled = true;
 
-                this.Dispatcher.Invoke(new System.Action(() =>
-                {
-                    Estado.Content = "Terminado";
-                    SubEstado.Content = "";
-                    progreso.Value = 0;
-                    this.lstServidores.IsEnabled = true;
-
-                    encender_botones();
-                }));
+                encender_botones();
+            }));
         }
 
         private void compareCompleted(object sender, Repository.CatalogoCompareCompletedEventArgs e)
@@ -920,6 +937,8 @@ namespace ActualizaBDD
             this.Dispatcher.Invoke(new System.Action(() =>
             {
                 Estado.Content = "Tarea " + e.Current.ToString() + " de " + e.Total.ToString();
+                SubEstado.Content = "Descargando " + Path.GetFileName(e.CurrentFilename);
+                progreso.Value = e.ProgressPercentage;
             }));
 
         }
@@ -928,12 +947,14 @@ namespace ActualizaBDD
         {
             try
             {
+                /*
                 this.Dispatcher.Invoke(new System.Action(() =>
                 {
                 //Estado.Content = "Ejecutando Tarea";
                     SubEstado.Content = e.Message;
                     progreso.Value = e.ProgressPercentage;           
                 }));
+                */
             }
             catch (Exception ex)
             {

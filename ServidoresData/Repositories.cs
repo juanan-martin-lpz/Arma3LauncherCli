@@ -38,9 +38,10 @@ namespace ServidoresData
 
                 repolight = JsonConvert.DeserializeObject<List<RepositoryProxy>>(json);
 
-                double oldsum = 0;
-                double newsum = 0;
+                //double oldsum = 0;
+                //double newsum = 0;
 
+                /*
                 foreach (RepositoryProxy r in repolight)
                 {
                     string repofolder = bay.GetDirectoryForRepo(r.Nombre).FullName;
@@ -55,7 +56,6 @@ namespace ServidoresData
                         continue;
                     }
 
-                    /*
                     if (File.Exists(repofolder + @"\timestamp_" + repo + @".txt"))
                     {
                         File.Copy(repofolder + @"\timestamp_" + repo + @".txt", repofolder + @"\timestamp_" + repo + @".old");
@@ -64,14 +64,13 @@ namespace ServidoresData
                     else
                     {
                     }
-                    */
+
 
                     dltstamp.DownloadFile(webrepository, repo + @"/timestamp.txt", repofolder + @"\timestamp_" + repo + @".new");
                     
                     oldsum = System.Convert.ToDouble(File.ReadAllText(bay.GetDirectoryForRepo(r.Nombre).FullName + @"\timestamp_" + r.Nombre + @".txt"));
                     
                     newsum = System.Convert.ToDouble(File.ReadAllText(repofolder + @"\timestamp_" + r.Nombre + @".new"));
-
 
                     r.MustUpdate = (newsum > oldsum) ? true : false;
 
@@ -87,6 +86,7 @@ namespace ServidoresData
                         File.Delete(repofolder + @"\timestamp_" + repo + @".new");
                     }
                 }
+                */
             }
             catch
             {

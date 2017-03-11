@@ -8,7 +8,6 @@ using System.Windows;
 using System.Security.Cryptography;
 using System.Diagnostics;
 using System.Data.HashFunction;
-using ArxOne.Ftp;
 
 namespace ActualizaBDD
 {
@@ -16,10 +15,10 @@ namespace ActualizaBDD
     {
 
         public static string ArmaStdErr {get; set;}
-        private static FtpClient ftpCli = null;
+        //private static FtpClient ftpCli = null;
 
 
-
+        /*
         static private void connectFTP(string servidor, string userName, string password)
         {
             if (ftpCli == null) 
@@ -85,7 +84,8 @@ namespace ActualizaBDD
 
             return true;
         }
-        
+        */
+         
         //Stackoverflow
         static private FtpWebRequest CreateFtpWebRequest(string ftpDirectoryPath, string userName, string password, bool keepAlive = false)
         {
@@ -111,6 +111,7 @@ namespace ActualizaBDD
             return request;
         }
 
+        /*
         // Descarga un fichero por FTP. true = descarga correcta false = descarga incorrecta.
         static public bool descarga_fichero(string servidor, string usuario, string contraseña, string fichero_remoto, string fichero_local)
         {
@@ -153,10 +154,10 @@ namespace ActualizaBDD
             {
                 return false;
             }
-             */
+             
         }
 
-
+        */
         internal static string calcula_firma_MD5(string fichero)
         {
             try

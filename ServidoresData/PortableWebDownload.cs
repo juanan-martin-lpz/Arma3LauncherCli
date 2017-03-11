@@ -160,7 +160,9 @@ namespace ServidoresData
 
                         //canDownload = (result.Item1 == 0) ? false : true;
 
-                        await file.WriteAsync(result.Item2, 0, (int) result.Item1);
+                        file.Write(result.Item2, 0, (int)result.Item1);
+
+                        //await file.WriteAsync(result.Item2, 0, (int) result.Item1);
 
                         pos += (int)result.Item1;
 

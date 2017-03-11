@@ -14,6 +14,10 @@ using System.Data.HashFunction;
 using NLog;
 using NLog.Targets;
 using Newtonsoft.Json;
+using csscript;
+using MyDownloader.Core;
+using MyDownloader.Extension.Protocols;
+
 
 namespace ServidoresData
 {
@@ -81,6 +85,12 @@ namespace ServidoresData
         ObservableCollection<DBData> dservidor;
 
         object locker = new object();
+
+        
+        double downloadprogress = 0;
+
+        DownloadManager dman;
+        //SemaphoreSlim sem;
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -166,6 +176,7 @@ namespace ServidoresData
         {
             public int Total;
             public int Current;
+            public string CurrentFilename;
 
             public PlanProgressEventArgs(int progressPercentage, object userState) : base(progressPercentage, userState)
             {
@@ -177,6 +188,8 @@ namespace ServidoresData
             
             modlist = new ObservableCollection<Mod>();
             modsInRepo = new List<DBData>();
+
+            
         }
       	
 		//  
@@ -187,6 +200,28 @@ namespace ServidoresData
         //       
         public Repository(string folder, RepositoryBay Bay, string Repo, List<ModView> Modlist)
         {
+
+            // ejecucion de scripts
+
+            //WinWebDownload dld = new WinWebDownload("http://188.165.254.137/WebRepo", Repo, "/PreInstall", Bay.ToDirectoryInfo().FullName + @"/PreInstall");
+
+            //dld.Download();
+
+            //string preinstall = bay.GetDirectoryForRepo(Repo).FullName + @"\Preinstall";
+
+            //var files = Directory.GetFiles(preinstall);
+
+            //foreach (string csf in files)
+            //{
+            //    string content = File.ReadAllText(csf);
+            //    dynamic script = CSScriptLibrary.CSScript.Evaluator.LoadCode(content);
+
+            //    script.Execute();
+
+            //}
+
+            //
+
             _downloading = false;
             sem = new SemaphoreSlim(12);
 
@@ -241,6 +276,7 @@ namespace ServidoresData
 
         public Repository(string folder, RepositoryBay Bay, string Repo)
         {
+
             _downloading = false;
             sem = new SemaphoreSlim(12);
 
@@ -297,7 +333,8 @@ namespace ServidoresData
 
         public Repository(string folder, string Repo, string targetFolder, List<ModView> Modlist)
         {
-            _downloading = false;
+
+           _downloading = false;
             sem = new SemaphoreSlim(12);
 
             FileTarget targ = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
@@ -445,6 +482,13 @@ namespace ServidoresData
 
         public void CatalogRepositoryAsync(IProgress<CatalogModsProgress> progress = null)
         {
+            /*
+             * EJECUCION DE SCRIPTS              
+             */
+
+
+            //
+
             int tfiles = 0;
             int tskip = 0;
             int tnew = 0;
@@ -809,10 +853,25 @@ namespace ServidoresData
             foreach(DBData d in ficheros)
             {
                 DirectoryInfo di = new DirectoryInfo(targetdir.FullName + d.Ruta);
+                DirectoryInfo dipre = new DirectoryInfo(targetdir.FullName + d.Ruta + @"\PreInstall");
+                DirectoryInfo dipost = new DirectoryInfo(targetdir.FullName + d.Ruta + @"\PostInstall");
 
                 if (!di.Exists)
                 {
                     di.Create();
+
+                    dipre.Create();
+                    dipost.Create();
+                }
+
+                if (!dipre.Exists)
+                {
+                    dipre.Create();
+                }
+
+                if (!dipost.Exists)
+                {
+                    dipost.Create();
                 }
 
                 FileInfo fi = new FileInfo(basedir.FullName + d.Ruta + @"\" +  d.Nombre);
@@ -830,18 +889,6 @@ namespace ServidoresData
 
                 fi.CopyTo(Path.Combine(di.FullName, d.Nombre), true);
             }
-
-            /*
-            foreach(Mod m in modlist)
-            {
-                foreach(ModFile f in m.Files)
-                {
-                    
-                    //FileInfo fi = new FileInfo( )
-                    Console.WriteLine(f.Basename);
-                }
-            }
-            */
         }
 
         public void CompareCatalogs(string nombre_bdd, string repo, string srv)
@@ -849,6 +896,13 @@ namespace ServidoresData
             int tnis = 0;
             int tdsig = 0;
             int tnic = 0;
+
+            MyDownloader.Extension.Protocols.HttpFtpProtocolExtension _protocol = new HttpFtpProtocolExtension(new MyParms());
+
+            //ProtocolProviderFactory.RegisterProtocolHandler("http", typeof(MyDownloader.Extension.Protocols.HttpProtocolProvider));
+
+            dman = new DownloadManager();
+
 
             Task t = new Task(() =>
                {
@@ -885,20 +939,34 @@ namespace ServidoresData
 
                        dlist = new ObservableCollection<WebDownloadAction>();
                        List<DBData> toAdd = new List<DBData>();
-                       
+
+                       dman.OnBeginAddBatchDownloads();
+
                        foreach (DBData r in notInCliente)
                        {
-                           string ruta = r.Ruta;
+                           string ruta = r.Ruta.Replace("\\\\","/");
                            string nombre = r.Nombre;
 
-                           IProgress<int> p = new Progress<int>();
-                           DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p);
-                           dc.Description = "Descargar " + nombre;
+                           //IProgress<int> p = new Progress<int>();
+                           //DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p);
+                           //dc.Description = "Descargar " + nombre;
 
+                           string url = srv + @"/" + repo + ruta.Replace("\\","/") + @"/" + nombre;
+                           string trg = basepath.Replace("/","\\") + ruta + @"\" + nombre;
+
+                           //queue.Add(url, trg);
+
+                           ResourceLocation rl = ResourceLocation.FromURL(url);
+                           Downloader dl = dman.Add(rl, new ResourceLocation[] { }, trg, 1, false);
+
+                           dl.StateChanged += new EventHandler(dlchanged);
+                           
                            //dcliente.Add(r);
-                           toAdd.Add(r);
+                           //toAdd.Add(r);
 
-                           TasksToDo.Add(dc);
+                           logger.Info("Fichero {0} anadido para descarga ({1} bytes)", r.Nombre, r.Tamano);
+
+                           //TasksToDo.Add(dc);
                        }
 
                        foreach (DBData r in distinctMD5)
@@ -913,14 +981,33 @@ namespace ServidoresData
 
                            TasksToDo.Add(df);
 
-                           IProgress<int> p1 = new Progress<int>();
-                           DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p1);
+                           //IProgress<int> p1 = new Progress<int>();
+                           //DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p1);
 
-                           dc.Description = "Descargar " + nombre;
+                           string url = srv + @"/" + repo + @"/" + ruta + @"/" + nombre;
+                           string trg = basepath + @"\" + ruta + @"\" + nombre;
+
+                           //queue.Add(url, trg);
+                           ResourceLocation rl = ResourceLocation.FromURL(url);
+                           Downloader dl = dman.Add(rl, new ResourceLocation[] { }, trg, 4, false);
+
+                           dl.StateChanged += new EventHandler(dlchanged);
+
 
                            toAdd.Add(r);
 
-                           TasksToDo.Add(dc);
+                           var theRec = from DBData cli in dcliente where cli.Nombre == r.Nombre && cli.Ruta == r.Ruta select cli;
+
+                           string firma = "";
+
+                           if (theRec.Any())
+                           {
+                               firma = theRec.ElementAt(0).Firma;
+                           } 
+
+                           logger.Info("Fichero {0} modificado en cliente ( Firma Servidor: {1} - Firma Cliente : {2})", r.Nombre, r.Firma, firma);
+
+                           //TasksToDo.Add(dc);
                         }
 
                        List<DBData> toRemove = new List<DBData>();
@@ -964,7 +1051,7 @@ namespace ServidoresData
                                IProgress<int> p = new Progress<int>();
                                DeleteFileCommand df = new DeleteFileCommand(new FileInfo(basepath + @"\" + ruta + @"\" + nombre), p);
 
-                               df.Description = "Elimininar " + nombre;
+                               df.Description = "Eliminar " + nombre;
 
                                TasksToDo.Add(df);
 
@@ -987,6 +1074,7 @@ namespace ServidoresData
                            dcliente.Remove(d);
                        }
 
+                       
 
                    }
                    catch (Exception ex)
@@ -1021,7 +1109,22 @@ namespace ServidoresData
             t.Start();
         }
 
+        
+        private void dlchanged(object sender, EventArgs e)
+        {
+            Downloader d = (Downloader)sender;
 
+            if (d.State == DownloaderState.Working)
+            {
+                OnUpgradeRepositoryProgressChanged(new TaskProgressProgressChanged((int)d.Progress, d));
+            }
+
+            if (d.State == DownloaderState.Ended)
+            {
+                Console.WriteLine("Finalizado {0}", d.ResourceLocation.URL);
+            }
+
+        }
         private void deleteIfEmpty(string p)
         {
             foreach (var directory in Directory.GetDirectories(p))
@@ -1039,15 +1142,64 @@ namespace ServidoresData
         public void UpgradeRepositoryAsync()
         {
             
+            
+            
             pplan = new PlanProgressEventArgs(0, null);
 
             PlanProgressChangedEventHandler plan = new PlanProgressChangedEventHandler(OnPlanProgress);
 
             commandList = new List<Task>();
-            executeTasks();            
+
+            executeTasks();
+
+            //queue.StartAsync();
+
+
+            dman.OnEndAddBatchDownloads();
+
+            sem = new SemaphoreSlim(6);
+
+            MyDownloader.Core.Settings.Default.MaxRetries = 2;
+
+            int current = 0;
+            int max = dman.Downloads.Count();
+
+            foreach (Downloader dl in dman.Downloads)
+            {
+                sem.Wait();
+
+                double per = (current * 100) / max;
+
+                PlanProgressEventArgs ev = new PlanProgressEventArgs((int)per, null);
+                ev.Total = max;
+                ev.Current = current;
+                ev.CurrentFilename = dl.LocalFile;
+
+                OnPlanProgress(this, ev);
+
+
+                current++;
+
+                dl.Start();
+                
+                dl.WaitForConclusion();
+
+                per = (current * 100) / max;
+
+                ev = new PlanProgressEventArgs((int)per,null);
+                ev.Total = max;
+                ev.Current = current;
+                
+                OnPlanProgress(this,ev);
+
+                sem.Release();
+            }
+
+            OnUpgradeRepositoryCompleted(new AsyncCompletedEventArgs(null, false, null));
+
         }
 
-        
+
         private void executeTasks()
         {
 
@@ -1060,8 +1212,10 @@ namespace ServidoresData
 
             foreach (CommandBase c in TasksToDo)
             {
+                
                 try
                 {
+                    /*
                     TaskProgressProgressChanged e = new TaskProgressProgressChanged(0, null);
                     e.Message = c.Description;
 
@@ -1080,6 +1234,7 @@ namespace ServidoresData
                     }
 
 
+                    
                     if (c is DownloadFileCommand)
                     {
                         DownloadFileCommand dc = (DownloadFileCommand)c;
@@ -1128,18 +1283,25 @@ namespace ServidoresData
 
                         };
                     }
+                    */
 
-                    pplan.Current++;
-                    
-                    currents.Add(c);
+                    //pplan.Current++;
 
+                    //currents.Add(c);
+
+                    c.Execute();
+
+                    /*
                     lock (locker)
                     {
                         Monitor.Enter(c);
                         c.Execute();
                     }
+                    */
 
-                    OnPlanProgress(this, pplan);
+                    //OnPlanProgress(this, pplan);
+
+                    
 
                 }
                 catch (Exception ex)
@@ -1156,7 +1318,7 @@ namespace ServidoresData
 
 
                     //sem.Release();
-                }
+                }                
             }
 
                        
@@ -1228,15 +1390,6 @@ namespace ServidoresData
             {          
                 UpgradeRepositoryProgressChanged(this, e);
             }
-
-            List<CommandBase>_list = new ObservableCollection<CommandBase>((from CommandBase c in TasksToDo where c.Progreso < 100 select c)).ToList<CommandBase>();
-
-            if (_list.Count == 0)
-            {
-                AsyncCompletedEventArgs eve = new AsyncCompletedEventArgs(null, false, null);
-                OnUpgradeRepositoryCompleted(eve);
-            }
-
         }
 
         public static  bool IsDefaultFolder(string folder)
@@ -1303,6 +1456,19 @@ namespace ServidoresData
             //dcliente.Disconnect();
             dcliente = null;
             GC.SuppressFinalize(this);
+        }
+
+        public double RepositoryDownloadProgress
+        {
+            get
+            {
+                return downloadprogress;
+            }
+
+            set
+            {
+                NotifyPropertyChanged("RepositoryDownloadProgress");
+            }
         }
 
         /*
