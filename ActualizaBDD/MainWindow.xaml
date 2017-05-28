@@ -14,8 +14,8 @@
                         <ColumnDefinition Width="148*"/>
                         <ColumnDefinition Width="453*"/>
                     </Grid.ColumnDefinitions>
-                    <RadioButton x:Name="radArma3" Content="ARMA 3" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Checked="radArma3_Checked"/>
-                    <RadioButton x:Name="radArma2" Content="ARMA 2" HorizontalAlignment="Left" Margin="41,10,0,0" VerticalAlignment="Top" Grid.Column="2" Checked="radArma2_Checked"/>
+                    <RadioButton x:Name="radArma3" Content="32 bit" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Checked="radArma3_Checked"/>
+                    <RadioButton x:Name="radArma2" Content="64 bit" HorizontalAlignment="Left" Margin="41,10,0,0" VerticalAlignment="Top" Grid.Column="2" Checked="radArma2_Checked"/>
                     <ListView x:Name="lstServidores" ItemsSource="{Binding Servidores}" HorizontalAlignment="Left" Height="232" Margin="10,30,0,0" VerticalAlignment="Top" Width="687" Grid.ColumnSpan="4">
                         <ListView.Resources>
                             <Style TargetType="{x:Type ListViewItem}">

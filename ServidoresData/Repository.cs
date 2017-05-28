@@ -1195,6 +1195,9 @@ namespace ServidoresData
                 sem.Release();
             }
 
+            dman = null;
+            
+
             OnUpgradeRepositoryCompleted(new AsyncCompletedEventArgs(null, false, null));
 
         }

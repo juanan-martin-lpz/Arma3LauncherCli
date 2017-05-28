@@ -208,6 +208,7 @@ namespace ActualizaBDD
             logger.Info("modlist.txt cargado correctamente");
 
             radArma3.IsChecked = true;
+            lstServidores.ItemsSource = from s in source.Servidores where s.Arma == "3" select s;
         }
 
         private void readModList()
@@ -683,16 +684,17 @@ namespace ActualizaBDD
             string modp = "";
             string gfolder = "";
 
-            if (radArma2.IsChecked.Value)
+            if (radArma3.IsChecked.Value)
             {
-                executable = "arma2oa.exe";
-                gfolder = tb_carpeta_arma2.Text;
+                executable = "arma3.exe";
+                //gfolder = tb_carpeta_arma2.Text;
+                gfolder = tb_carpeta_arma3.Text;
 
                 if (!radDefaultFolder.IsChecked.Value) { modp = txtUserDefined.Text; };
             }
             else
             {
-                executable = "arma3.exe";
+                executable = "arma3_x64.exe";
                 gfolder = tb_carpeta_arma3.Text;
                 if (!radDefaultFolder.IsChecked.Value) { modp = txtUserDefined.Text; };
 
@@ -750,8 +752,10 @@ namespace ActualizaBDD
 
             if (radDefaultFolder.IsChecked.Value)
             {
-                if (radArma3.IsChecked.Value) { carpeta_juego = tb_carpeta_arma3.Text; }
-                if (radArma2.IsChecked.Value) { carpeta_juego = tb_carpeta_arma2.Text; }
+                carpeta_juego = tb_carpeta_arma3.Text;
+
+                //if (radArma3.IsChecked.Value) { carpeta_juego = tb_carpeta_arma3.Text; }
+                //if (radArma2.IsChecked.Value) { carpeta_juego = tb_carpeta_arma2.Text; }
             }
             else
             {
@@ -977,12 +981,12 @@ namespace ActualizaBDD
 
         private void radArma3_Checked(object sender, RoutedEventArgs e)
         {
-            lstServidores.ItemsSource = from s in source.Servidores where s.Arma == "3" select s;
+            //lstServidores.ItemsSource = from s in source.Servidores where s.Arma == "3" select s;
         }
 
         private void radArma2_Checked(object sender, RoutedEventArgs e)
         {
-            lstServidores.ItemsSource = from s in source.Servidores where s.Arma == "2" select s;
+            //lstServidores.ItemsSource = from s in source.Servidores where s.Arma == "2" select s;
         }
 
 
