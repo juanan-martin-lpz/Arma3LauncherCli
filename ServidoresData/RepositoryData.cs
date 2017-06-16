@@ -197,7 +197,15 @@ namespace ServidoresData
 			string pathA = a.Ruta + @"\" + a.Nombre;
 			string pathB = b.Ruta + @"\" + b.Nombre;
 
-			return (a.Ruta == b.Ruta) && (a.Nombre == b.Nombre);
+			if ((a.Ruta == b.Ruta) && (a.Nombre == b.Nombre))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
 			//return pathA == pathB;
 		}
 

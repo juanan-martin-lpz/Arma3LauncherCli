@@ -1,54 +1,7 @@
 ﻿
 @{
-    ViewBag.Title = "12 Brigada de Infanteria";
+    ViewBag.Title = "View";
 }
 
-<h2>Acceso</h2>
+<h2>View</h2>
 
-<div class="well">    
-    <div class="alert-danger">
-        <p>
-            <input class="input" data-bind="value: model.user" />
-            <input class="input" data-bind="value: model.password" />
-        </p>
-        <p>
-            <button class="btn btn-primary btn-lg" data-bind="click: authuser">Acceder</button>
-        </p>
-    </div>      
-</div>
-
-<script>
-
-    var model = {
-        user: ko.observable(null),
-        password: ko.observable(null),
-        error: ko.observable(""),
-        gotError: ko.observable(false) 
-    };
-
-    $(document).ready(function () {
-        ko.applyBindings();
-    });
-
-    setDefaultCallbacks(function (data) {
-        if (data) {
-            console.log("---Begin Success---");
-            console.log(JSON.stringify(data));
-            console.log("---End Success---");
-        }
-        else {
-            console.log("Success (no data)");
-        } model.gotError(false);
-        },
-        function (statusCode, statusText) {
-            console.log("Error: " + statusCode + " (" + statusText + ")");
-            model.error(statusCode + " (" + statusText + ")"); model.gotError(true);
-        }); 
-
-    var authuser = function () {
-        console.log("Usuario auth");
-        authenticate();
-    };
-</script>
-
-   

@@ -1,0 +1,8 @@
+version: '2'
+
+services:
+  webservermanager:
+    image: webservermanager
+    build:
+      context: ./WebServerManager
+      dockerfile: Dockerfile

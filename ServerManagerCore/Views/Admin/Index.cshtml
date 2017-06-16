@@ -1,0 +1,44 @@
+@model IEnumerable<ServerManagerCore.Models.Admin.UserViewModel>
+
+@{
+    ViewData["Title"] = "Todos los Usuarios";
+}
+
+<h2>Index</h2>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.UserName)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.RoleName)
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(model => item.UserName)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => item.RoleName)
+                    </td>
+                    <td>                       
+                        @Html.ActionLink("Editar","Edit","Admin",null, new{ @class="btn btn-primary", @id="@item.Id" })
+                        @Html.ActionLink("Detalles", "Details", "Admin", null, new { @class = "btn btn-primary", @id = "@item.Id" })
+                        @Html.ActionLink("Enviar Pwd Link", "SendPasswordLinl", "Admin", null, new { @class = "btn btn-warning", @id = "@item.Id" })
+                        @Html.ActionLink("Eliminar", "Delete", "Admin", null, new { @class = "btn btn-danger", @id = "@item.Id" })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

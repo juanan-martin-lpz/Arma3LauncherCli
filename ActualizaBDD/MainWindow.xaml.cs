@@ -145,6 +145,14 @@ namespace ActualizaBDD
             }
 
             Configuracion.cargar_configuracion(this);
+
+            logger.Info("=================================================================================");
+            logger.Info("Configuracion");
+            logger.Info("Arma3 folder {0}", tb_carpeta_arma3.Text);
+            logger.Info("Default folder {0}", radDefaultFolder.IsChecked );
+            logger.Info("UserDefined folder {0}", radUserDefinedFolder.IsChecked == true ? txtUserDefined.Text : "No definido");
+            logger.Info("=================================================================================");
+
             //
             diag = new Diagnosticos();
             diag.obtener_estado_microfonos();
@@ -163,7 +171,7 @@ namespace ActualizaBDD
             string rpath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\\12bdi_launcher\\Repositories";
             string fpath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\\12bdi_launcher\\modlist.txt";
             string spath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\\12bdi_launcher\\Servidores2.txt";
-            
+
             if (File.Exists(fpath))
             {
                 File.Delete(fpath);
@@ -947,10 +955,31 @@ namespace ActualizaBDD
 
         }
 
+        public string PrettyFormat(TimeSpan span)
+        {
+
+            if (span == TimeSpan.Zero) return "0 minutes";
+
+            var sb = new System.Text.StringBuilder();
+            if (span.Days > 0)
+                sb.AppendFormat("{0} day{1} ", span.Days, span.Days > 1 ? "s" : String.Empty);
+            if (span.Hours > 0)
+                sb.AppendFormat("{0} hour{1} ", span.Hours, span.Hours > 1 ? "s" : String.Empty);
+            if (span.Minutes > 0)
+                sb.AppendFormat("{0} minute{1} ", span.Minutes, span.Minutes > 1 ? "s" : String.Empty);
+            return sb.ToString();
+
+        }
+
         private void updateTasks(object sender, Repository.TaskProgressProgressChanged e)
         {
             try
             {
+                this.Dispatcher.Invoke(new System.Action(() =>
+                {
+
+                    //SubEstado.Content = SubEstado.Content + "(" + PrettyFormat(e.Left) + ")";
+                }));
                 /*
                 this.Dispatcher.Invoke(new System.Action(() =>
                 {

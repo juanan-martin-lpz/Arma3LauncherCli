@@ -1,0 +1,47 @@
+﻿@{
+    ViewBag.Title = "12 Brigada de Infanteria";
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        console.log("Document ready");
+        ko.applyBindings(usermodel);
+    })
+
+    var usermodel = {
+        username: ko.observable(null),
+        password: ko.observable(null),
+        authenticated: ko.observable(false),
+        error: ko.observable(""),
+        gotError: ko.observable(false),
+        returnUrl: ko.observable("")
+    };
+
+    var authuser = function () {
+        authenticate(authsuccess);
+    };
+
+    var authsuccess = function () {
+        console.log("redireccionando");
+
+        window.location.href = "/dashboard/index";
+    }
+</script>
+
+<h2>Acceso Restringido</h2>
+
+<div class="panel panel-primary">    
+    <div class="well">
+        <p>
+            <input class="input" data-bind="value: usermodel.username" />
+        </p>
+        <p>
+            <input class="input" data-bind="value: usermodel.password" />
+        </p>
+        <p>
+            <button class="btn btn-primary btn-lg" data-bind="click: authuser">Acceder</button>
+        </p>
+    </div>      
+</div>
+
+   

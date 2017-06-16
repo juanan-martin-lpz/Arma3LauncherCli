@@ -124,9 +124,12 @@ namespace ServidoresData
             public double Speed { get; set; }
             public double TotalBytes { get; set; }
             public double ActualBytes { get; set; }
+            public TimeSpan Left { get; set; }
 
             public TaskProgressProgressChanged(int progressPercentage, object userState) : base(progressPercentage, userState)
             {
+                Downloader dow = (Downloader)userState;
+                Left = dow.Left;
             }
         }
 
@@ -222,6 +225,14 @@ namespace ServidoresData
 
             //
 
+            FileTarget target = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
+            string datemask = System.DateTime.Now.ToShortDateString().Replace("/", "_");
+            datemask = datemask.Replace("/", "_");
+            string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + datemask + ".txt";
+            target.FileName = filename;
+
+            logger.Info(@"En Repository(string folder, RepositoryBay Bay, string Repo, List<ModView> Modlist)");
+
             _downloading = false;
             sem = new SemaphoreSlim(12);
 
@@ -229,8 +240,6 @@ namespace ServidoresData
             bay = Bay;
             nombre = Repo;
             basedir = new DirectoryInfo(basepath);
-
-            Console.WriteLine("Paso 3");
 
             modlist = new ObservableCollection<Mod>();
             _serverMods = Modlist;
@@ -241,8 +250,6 @@ namespace ServidoresData
             {
                 baydir.Create();
             }
-
-            string dbfile = Path.Combine(bay.ToDirectoryInfo().FullName, nombre, "ficheros.db4o");
 
             string jsonfile = Path.Combine(Bay.ToDirectoryInfo().FullName, Repo, "ficheros.json");
 
@@ -269,26 +276,56 @@ namespace ServidoresData
             {
                 logger.Fatal("Excepcion al abrir la base de datos : {0}", ex2.Message);
 
+                logger.Info("Construccion Erronea.");
+
+                logger.Info("=======================================================================================");
+                logger.Info("dcliente : {0}", dcliente == null ? true : false);
+                logger.Info("basepath : {0}", basepath);
+                logger.Info("repo : {0}", nombre);
+                logger.Info("bay : {0}", bay.ToString());
+                logger.Info("basedir : {0}", basedir);
+
+                logger.Info("========================================================================================");
+
                 throw;
             }
+
+            logger.Info("Construccion finalizada.");
+
+            logger.Info("=======================================================================================");
+            logger.Info("dcliente : {0}", dcliente == null ? true : false);
+
+            if (dcliente != null)
+            {
+                logger.Info("{0} registros en dcliente", dcliente.Count);
+            }
+
+            logger.Info("basepath : {0}", basepath);
+            logger.Info("repo : {0}", nombre);
+            logger.Info("bay : {0}", bay.ToString());
+            logger.Info("basedir : {0}", basedir);
+            
+            logger.Info("Contenido json");
+            if (File.Exists(jsonfile)) { logger.Info("{0}", File.ReadAllText(jsonfile)); } else { logger.Info("No existe el fichero {0}", jsonfile); }
+            logger.Info("========================================================================================");
 
         }
 
         public Repository(string folder, RepositoryBay Bay, string Repo)
         {
+            FileTarget target = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
+            string datemask = System.DateTime.Now.ToShortDateString().Replace("/", "_");
+            datemask = datemask.Replace("/", "_");
+            string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + datemask + ".txt";
+            target.FileName = filename;
 
             _downloading = false;
             sem = new SemaphoreSlim(12);
-
-            Console.WriteLine("Paso 1");
-
 
             basepath = folder;
             bay = Bay;
             nombre = Repo;
             basedir = new DirectoryInfo(basepath);
-
-            Console.WriteLine("Paso 2");
 
             DirectoryInfo baydir = bay.GetDirectoryForRepo(nombre);
 
@@ -296,8 +333,6 @@ namespace ServidoresData
             {
                 baydir.Create();
             }
-
-            string dbfile = Path.Combine(bay.ToDirectoryInfo().FullName, nombre, "ficheros.db4o");
 
             string jsonfile = Path.Combine(Bay.ToDirectoryInfo().FullName, Repo, "ficheros.json");
 
@@ -326,8 +361,44 @@ namespace ServidoresData
             {
                 logger.Fatal("Excepcion al abrir la base de datos : {0}", ex2.Message);
 
+                logger.Info("Construccion erronea.");
+
+                logger.Info("=======================================================================================");
+                logger.Info("dcliente : {0}", dcliente == null ? true : false);
+
+                if (dcliente != null)
+                {
+                    logger.Info("{0} registros en dcliente", dcliente.Count);
+                }
+
+                logger.Info("basepath : {0}", basepath);
+                logger.Info("repo : {0}", nombre);
+                logger.Info("bay : {0}", bay.ToString());
+                logger.Info("basedir : {0}", basedir);
+
+                logger.Info("========================================================================================");
+
                 throw;
             }
+
+            logger.Info("Construccion finalizada.");
+
+            logger.Info("=======================================================================================");
+            logger.Info("dcliente : {0}", dcliente == null ? true : false);
+
+            if (dcliente != null)
+            {
+                logger.Info("{0} registros en dcliente", dcliente.Count);
+            }
+
+            logger.Info("basepath : {0}", basepath);
+            logger.Info("repo : {0}", nombre);
+            logger.Info("bay : {0}", bay.ToString());
+            logger.Info("basedir : {0}", basedir);
+
+            logger.Info("Contenido json");
+            logger.Info("{0}", File.ReadAllText(jsonfile));
+            logger.Info("========================================================================================");
 
         }
 
@@ -337,9 +408,11 @@ namespace ServidoresData
            _downloading = false;
             sem = new SemaphoreSlim(12);
 
-            FileTarget targ = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
-            string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + System.DateTime.Now.ToShortDateString() + ".txt";
-            targ.FileName = filename;
+            FileTarget targetlogger = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
+            string datemask = System.DateTime.Now.ToShortDateString().Replace("/", "_");
+            datemask = datemask.Replace("/", "_");
+            string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + datemask + ".txt";
+            targetlogger.FileName = filename;
 
             basepath = folder;
             nombre = Repo;
@@ -349,8 +422,6 @@ namespace ServidoresData
 
             modlist = new ObservableCollection<Mod>();
             _serverMods = Modlist;
-
-            string dbfile = Path.Combine(targetdir.FullName, "ficheros.db4o");
 
             string jsonfile = Path.Combine(targetdir.FullName, "ficheros.json");
 
@@ -391,17 +462,50 @@ namespace ServidoresData
                     modsInRepo = new List<DBData>();
                 }
                 dcliente = new ObservableCollection<DBData>();
-
-                //dcliente = new db4oDB(dbfile, "ficheros_cliente", false);
-                //dcliente.Open();
-                //dcliente.ReadDB();
             }
             catch (Exception ex2)
             {
                 logger.Fatal("Excepcion al abrir la base de datos : {0}", ex2.Message);
 
+                logger.Info("Construccion erronea.");
+
+                logger.Info("=======================================================================================");
+                logger.Info("dcliente : {0}", dcliente == null ? true : false);
+
+                if (dcliente != null)
+                {
+                    logger.Info("{0} registros en dcliente", dcliente.Count);
+                }
+
+                logger.Info("basepath : {0}", basepath);
+                logger.Info("repo : {0}", nombre);
+                logger.Info("target : {0}", target);
+                logger.Info("basedir : {0}", basedir);
+
+                logger.Info("========================================================================================");
+
                 throw;
             }
+
+            logger.Info("Construccion finalizada.");
+
+            logger.Info("=======================================================================================");
+            logger.Info("dcliente : {0}", dcliente == null ? true : false);
+
+            if (dcliente != null)
+            {
+                logger.Info("{0} registros en dcliente", dcliente.Count);
+            }
+
+            logger.Info("basepath : {0}", basepath);
+            logger.Info("repo : {0}", nombre);
+            logger.Info("target : {0}", target);
+            logger.Info("basedir : {0}", basedir);
+
+            logger.Info("Contenido json");
+            logger.Info("{0}", File.ReadAllText(jsonfile));
+            logger.Info("========================================================================================");
+
         }
 
 
@@ -582,7 +686,7 @@ namespace ServidoresData
                             }
                         }
                     }
-                }
+                }                
 
                 CatalogoCompletedEventArgs c = new CatalogoCompletedEventArgs(null, false, null);
                 c.Total = tfiles;
@@ -717,14 +821,22 @@ namespace ServidoresData
                                     throw;
                                 }
                             }
-
-
-
                         }
                     }
                 }
 
                 //List<DBData> all = (from DBData p in dcliente.Container select p).ToList<DBData>();
+
+                var Totales = dcliente.Count();
+                var dataACero = from d in dcliente where d.Tamano == 0 select d;
+                var ACero = dataACero.Count();
+
+                logger.Info("CatalogFolderAsync terminado.");
+
+                logger.Info("=======================================================================================");
+                logger.Info("Total archivos catalogados : {0}", Totales);
+                logger.Info("Total archivos con tamano cero : {0}", ACero);
+                logger.Info("========================================================================================");
 
                 CatalogModsProgress cp2 = new CatalogModsProgress();
                 cp2.TotalMods = dcliente.Count();
@@ -932,10 +1044,27 @@ namespace ServidoresData
                        tnis = notInServer.Count();
                        tnic = notInCliente.Count();
                        tdsig = distinctMD5.Count();
+                       var tczero = (from d in dcliente where d.Tamano == 0 select d).Count();
+                       var tszero = (from d in dservidor where d.Tamano == 0 select d).Count();
 
-                        // notInCliente -> Add to report
-                        // notInServer -> Eliminate or Keep (User choice)
-                        // distinctMD5 -> Update
+                       logger.Info("CatalogRepoositoryAsync terminado.");
+
+                       logger.Info("=======================================================================================");
+                       logger.Info("Archivos en el cliente : {0}", dcliente.Count);
+                       logger.Info("Archivos en el servidor : {0}", dservidor.Count);
+
+                       logger.Info("Archivos que faltan en el cliente (Catalogados): {0}", tnic);
+                       logger.Info("Archivos diferentes : {0}", tdsig);
+                       logger.Info("Archivos eliminados en el servidor {0}", tnis);
+                       logger.Info("Archivos en cliente con tamano cero {0}", tczero);
+                       logger.Info("Archivos en servidor con tamano cero {0}", tszero);
+
+                       logger.Info("========================================================================================");
+
+
+                       // notInCliente -> Add to report
+                       // notInServer -> Eliminate or Keep (User choice)
+                       // distinctMD5 -> Update
 
                        dlist = new ObservableCollection<WebDownloadAction>();
                        List<DBData> toAdd = new List<DBData>();
@@ -944,71 +1073,92 @@ namespace ServidoresData
 
                        foreach (DBData r in notInCliente)
                        {
-                           string ruta = r.Ruta.Replace("\\\\","/");
-                           string nombre = r.Nombre;
+                           if (r.Tamano > 0)
+                           {
+                               string ruta = r.Ruta.Replace("\\\\", "/");
+                               string nombre = r.Nombre;
 
-                           //IProgress<int> p = new Progress<int>();
-                           //DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p);
-                           //dc.Description = "Descargar " + nombre;
+                               //IProgress<int> p = new Progress<int>();
+                               //DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p);
+                               //dc.Description = "Descargar " + nombre;
 
-                           string url = srv + @"/" + repo + ruta.Replace("\\","/") + @"/" + nombre;
-                           string trg = basepath.Replace("/","\\") + ruta + @"\" + nombre;
+                               string url = srv + @"/" + repo + ruta.Replace("\\", "/") + @"/" + nombre;
+                               string trg = basepath.Replace("/", "\\") + ruta + @"\" + nombre;
 
-                           //queue.Add(url, trg);
+                               //queue.Add(url, trg);
 
-                           ResourceLocation rl = ResourceLocation.FromURL(url);
-                           Downloader dl = dman.Add(rl, new ResourceLocation[] { }, trg, 1, false);
+                               ResourceLocation rl = ResourceLocation.FromURL(url);
+                               Downloader dl = dman.Add(rl, new ResourceLocation[] { }, trg, 1, false);
 
-                           dl.StateChanged += new EventHandler(dlchanged);
-                           
-                           //dcliente.Add(r);
-                           //toAdd.Add(r);
+                               dl.StateChanged += new EventHandler(dlchanged);
+                               dl.SegmentStarted += new EventHandler<SegmentEventArgs>(segmentStarted);
 
-                           logger.Info("Fichero {0} anadido para descarga ({1} bytes)", r.Nombre, r.Tamano);
 
+                               //dcliente.Add(r);
+                               //toAdd.Add(r);
+
+                               logger.Info("Fichero {0} anadido para descarga ({1} bytes)", r.Nombre, r.Tamano);
+                           }
                            //TasksToDo.Add(dc);
                        }
 
                        foreach (DBData r in distinctMD5)
                        {
-                           string ruta = r.Ruta;
-                           string nombre = r.Nombre;
-
-                           IProgress<int> p = new Progress<int>();
-                           DeleteFileCommand df = new DeleteFileCommand(new FileInfo(basepath + @"\" + ruta + @"\" + nombre), p);
-
-                           df.Description = "Elimininar " + nombre;
-
-                           TasksToDo.Add(df);
-
-                           //IProgress<int> p1 = new Progress<int>();
-                           //DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p1);
-
-                           string url = srv + @"/" + repo + @"/" + ruta + @"/" + nombre;
-                           string trg = basepath + @"\" + ruta + @"\" + nombre;
-
-                           //queue.Add(url, trg);
-                           ResourceLocation rl = ResourceLocation.FromURL(url);
-                           Downloader dl = dman.Add(rl, new ResourceLocation[] { }, trg, 4, false);
-
-                           dl.StateChanged += new EventHandler(dlchanged);
-
-
-                           toAdd.Add(r);
-
-                           var theRec = from DBData cli in dcliente where cli.Nombre == r.Nombre && cli.Ruta == r.Ruta select cli;
-
-                           string firma = "";
-
-                           if (theRec.Any())
+                           if (r.Tamano > 0)
                            {
-                               firma = theRec.ElementAt(0).Firma;
-                           } 
+                               string ruta = r.Ruta;
+                               string nombre = r.Nombre;
 
-                           logger.Info("Fichero {0} modificado en cliente ( Firma Servidor: {1} - Firma Cliente : {2})", r.Nombre, r.Firma, firma);
+                               IProgress<int> p = new Progress<int>();
+                               DeleteFileCommand df = new DeleteFileCommand(new FileInfo(basepath + @"\" + ruta + @"\" + nombre), p);
 
+                               df.Description = "Elimininar " + nombre;
+
+                               TasksToDo.Add(df);
+
+                               //IProgress<int> p1 = new Progress<int>();
+                               //DownloadFileCommand dc = new DownloadFileCommand(srv, repo, ruta + "/" + nombre, basepath + @"\" + ruta + @"\" + nombre, p1);
+
+                               string url = srv + @"/" + repo + @"/" + ruta + @"/" + nombre;
+                               string trg = basepath + @"\" + ruta + @"\" + nombre;
+
+                               //queue.Add(url, trg);
+                               ResourceLocation rl = ResourceLocation.FromURL(url);
+                               Downloader dl = dman.Add(rl, new ResourceLocation[] { }, trg, 4, false);
+
+                               dl.StateChanged += new EventHandler(dlchanged);
+
+
+                               toAdd.Add(r);
+
+                               var theRec = from DBData cli in dcliente where cli.Nombre == r.Nombre && cli.Ruta == r.Ruta select cli;
+
+                               string firma = "";
+
+                               if (theRec.Any())
+                               {
+                                   firma = theRec.ElementAt(0).Firma;
+                               }
+
+                               logger.Info("Fichero {0} modificado en cliente ( Firma Servidor: {1} - Firma Cliente : {2})", r.Nombre, r.Firma, firma);
+                           }
+                           else
+                           {
+                               string ruta = r.Ruta;
+                               string nombre = r.Nombre;
+
+                               IProgress<int> p = new Progress<int>();
+                               DeleteFileCommand df = new DeleteFileCommand(new FileInfo(basepath + @"\" + ruta + @"\" + nombre), p);
+
+                               df.Description = "Elimininar " + nombre;
+
+                               logger.Warn("Archivo {0} marcado para eliminar porque en el servidor tiene tamano cero", nombre);
+
+                               TasksToDo.Add(df);
+
+                           }
                            //TasksToDo.Add(dc);
-                        }
+                       }
 
                        List<DBData> toRemove = new List<DBData>();
 
@@ -1030,6 +1180,8 @@ namespace ServidoresData
 
                                    IProgress<int> p = new Progress<int>();
                                    DeleteFileCommand df = new DeleteFileCommand(new FileInfo(basepath + @"\" + ruta + @"\" + nombre), p);
+
+                                   logger.Info("Fichero {0} marcado para eliminacion", r.Nombre);
 
                                    df.Description = "Eliminar " + nombre;
 
@@ -1109,11 +1261,18 @@ namespace ServidoresData
             t.Start();
         }
 
+        private void segmentStarted(object sender, MyDownloader.Core.SegmentEventArgs e)
+        {
+            Downloader d = (Downloader)e.Downloader;
+
+            OnUpgradeRepositoryProgressChanged(new TaskProgressProgressChanged((int)d.Progress, d));
+        }
         
         private void dlchanged(object sender, EventArgs e)
         {
             Downloader d = (Downloader)sender;
 
+           
             if (d.State == DownloaderState.Working)
             {
                 OnUpgradeRepositoryProgressChanged(new TaskProgressProgressChanged((int)d.Progress, d));
@@ -1121,7 +1280,7 @@ namespace ServidoresData
 
             if (d.State == DownloaderState.Ended)
             {
-                Console.WriteLine("Finalizado {0}", d.ResourceLocation.URL);
+                logger.Info("Finalizado {0}, {1} bytes descargados", d.ResourceLocation.URL, d.Transfered);
             }
 
         }
