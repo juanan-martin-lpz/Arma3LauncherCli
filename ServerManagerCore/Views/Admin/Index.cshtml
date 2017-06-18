@@ -4,15 +4,18 @@
     ViewData["Title"] = "Todos los Usuarios";
 }
 
-<h2>Index</h2>
+<h2>Todos los Usuarios</h2>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create" class="btn btn-primary">Nuevo Ususario</a>
 </p>
 <div class="table-responsive">
     <table class="table">
         <thead>
             <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.Id)
+                </th>
                 <th>
                     @Html.DisplayNameFor(model => model.UserName)
                 </th>
@@ -26,16 +29,19 @@
             {
                 <tr>
                     <td>
+                        @Html.DisplayFor(model => item.Id)
+                    </td>
+                    <td>
                         @Html.DisplayFor(model => item.UserName)
                     </td>
                     <td>
                         @Html.DisplayFor(model => item.RoleName)
                     </td>
-                    <td>                       
-                        @Html.ActionLink("Editar","Edit","Admin",null, new{ @class="btn btn-primary", @id="@item.Id" })
-                        @Html.ActionLink("Detalles", "Details", "Admin", null, new { @class = "btn btn-primary", @id = "@item.Id" })
-                        @Html.ActionLink("Enviar Pwd Link", "SendPasswordLinl", "Admin", null, new { @class = "btn btn-warning", @id = "@item.Id" })
-                        @Html.ActionLink("Eliminar", "Delete", "Admin", null, new { @class = "btn btn-danger", @id = "@item.Id" })
+                    <td>  
+                        <a asp-action="Edit" class="btn btn-primary" asp-route-Id="@item.Id">Editar</a>
+                        <a asp-action="Details" class="btn btn-primary" asp-route-Id="@item.Id">Detalles</a>
+                        <a asp-action="SendPasswordLink" class = "btn btn-warning" asp-route-Id="@item.Id">Enviar Pwd. Link</a>
+                        <a asp-action="Delete" class = "btn btn-danger" asp-route-Id="@item.Id">Eliminar</a>
                     </td>
                 </tr>
             }

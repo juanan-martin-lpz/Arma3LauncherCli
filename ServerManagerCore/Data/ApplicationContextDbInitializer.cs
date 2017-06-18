@@ -44,42 +44,43 @@ namespace ServerManagerCore.Data
             string password = "secret";
             string email = "admin@example.com";
 
-            ApplicationRole adminrole = new ApplicationRole(roleName);
-            ApplicationRole editorrole = new ApplicationRole("Editores");
-            ApplicationRole memberrole = new ApplicationRole("Miembros");
-            ApplicationRole inactiverole = new ApplicationRole("Inactivos");
+            ApplicationRole adminrole = _context.Roles.FirstOrDefault<ApplicationRole>(a => a.Name == roleName);
 
-            if (!_roleManager.RoleExistsAsync(roleName).Result)
+            if (adminrole == null)
             {
+                adminrole = new ApplicationRole(roleName);
+
+                ApplicationRole editorrole = new ApplicationRole("Editores");
+                ApplicationRole memberrole = new ApplicationRole("Miembros");
+                ApplicationRole inactiverole = new ApplicationRole("Inactivos");
+
                 _context.Roles.Add(inactiverole);
                 _context.Roles.Add(adminrole);
                 _context.Roles.Add(editorrole);
                 _context.Roles.Add(memberrole);
-                
+
+                ApplicationUser admin = _context.Users.FirstOrDefault<ApplicationUser>(u => u.UserName == userName); //_userManager.FindByNameAsync(userName).Result;
+
+                if (admin == null)
+                {
+                    PasswordHasher<ApplicationUser> phash = new PasswordHasher<ApplicationUser>();
+
+                    admin = new ApplicationUser { UserName = userName, Email = email };
+                    string pwd = phash.HashPassword(admin, password);
+
+                    IdentityUserRole<int> userrole = new IdentityUserRole<int>();
+                    userrole.RoleId = adminrole.Id;
+
+                    admin.Roles.Add(userrole);
+
+                    admin.PasswordHash = pwd;
+
+                    _context.Users.Add(admin);
+
+                }
+
+                await _context.SaveChangesAsync();
             }
-
-
-            ApplicationUser admin = _context.Users.FirstOrDefault<ApplicationUser>(u => u.UserName == userName); //_userManager.FindByNameAsync(userName).Result;
-
-            if (admin == null)
-            {
-                PasswordHasher<ApplicationUser> phash = new PasswordHasher<ApplicationUser>();
-
-                admin = new ApplicationUser { UserName = userName, Email = email };
-                string pwd = phash.HashPassword(admin, password);
-
-                IdentityUserRole<int> userrole = new IdentityUserRole<int>();
-                userrole.RoleId = adminrole.Id;
-
-                admin.Roles.Add(userrole);
-
-                admin.PasswordHash = pwd;
-
-                _context.Users.Add(admin);
-                
-            }
-
-            await _context.SaveChangesAsync();
         }
     }
 }

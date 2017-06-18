@@ -61,8 +61,8 @@ namespace ServerManagerCore.Admin
                 return BadRequest("Usuario no encontrado");
             }
 
-            // return View(user);
-            return BadRequest();
+            return View(user);
+            //return BadRequest();
         }
 
         public IActionResult SendChangePasswordUrl(int id)
