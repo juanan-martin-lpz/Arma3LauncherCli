@@ -43,6 +43,9 @@ namespace ServerManagerCore
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("Web12BDISecurityLocal")));
 
+            services.AddDbContext<Web12BDIDataContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("Web12BDIDataLocal")));
+
             services.AddIdentity<ApplicationUser, ApplicationRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext, int>()
                 .AddDefaultTokenProviders();

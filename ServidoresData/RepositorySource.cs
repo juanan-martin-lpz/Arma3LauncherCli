@@ -56,8 +56,7 @@ namespace ServidoresData
             readServidores();
 
             dl.DownloadFile(webrepository, @"/servidores3.txt", servidores_path.Parent.FullName + @"\Servidores3.txt");
-            readServidoresMision();
-
+            readServidoresMision();            
         }
 
         public string GetRepositoryCatalog(string repo)
@@ -65,7 +64,8 @@ namespace ServidoresData
             string nombre_bdd = Path.GetTempPath() + "ficheros_" + DateTime.Now.Ticks + ".db4o";
 
             WinWebDownload dl = new WinWebDownload();
-            dl.DownloadFile(webrepository, repo + @"/ficheros.json", nombre_bdd);
+            dl.DownloadFile(webrepository, repo + @"/ficheros.json", nombre_bdd);            
+
 
             dl = null;
 
@@ -135,8 +135,50 @@ namespace ServidoresData
                                     foreach (string m in lmods)
                                     {
                                         ServidoresData.Mod mo = new ServidoresData.Mod();
-                                        mo.Nombre = m;
-                                        s.ModList.Add(mo);
+
+                                        // Si empieza por % es un repo completo
+                                        if (m.StartsWith(@"%"))
+                                        {
+                                            WinWebDownload dl2 = new WinWebDownload();
+
+                                            string repostr = m.Trim('%');
+                                            string trg = "";
+                                            string fname = "";
+
+                                            var parcial = repostr.Split(':');
+
+                                            repostr = parcial[0];
+
+                                            if (parcial.Length > 1)
+                                            {
+                                                fname = parcial[1] + @".txt";
+                                                trg = Path.Combine(repostr, fname);
+                                            }
+                                            else
+                                            {
+                                                fname = "modorder.txt";
+                                                trg = Path.Combine(repostr, fname);
+                                            }                                            
+
+                                            dl2.DownloadFile(webrepository, trg, Path.Combine(servidores_path.Parent.FullName, "Repositories", trg));
+
+                                            StreamReader morder = new StreamReader(Path.Combine(servidores_path.Parent.FullName, "Repositories", repostr, fname));
+
+                                            string linea;
+
+                                            while ((linea = morder.ReadLine()) != null)
+                                            {
+                                                ServidoresData.Mod mm = new ServidoresData.Mod();
+                                                mm.Nombre = linea;
+                                                mm.FromRepository = repostr;
+                                                s.ModList.Add(mm);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            mo.Nombre = m;
+                                            s.ModList.Add(mo);
+                                        }
                                     }
                                 }
 

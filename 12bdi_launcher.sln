@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.13
+VisualStudioVersion = 15.0.26430.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "12bdi_launcher", "ActualizaBDD\12bdi_launcher.csproj", "{A2D7EFDF-3D98-4E62-82A4-CF3B26B5011D}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -28,6 +28,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestServerManagerConsole", "TestServerManagerConsole\TestServerManagerConsole.csproj", "{BFCF8E2E-191E-4417-A3E6-9FD2C4F3347C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerManagerCore", "ServerManagerCore\ServerManagerCore.csproj", "{FAF6AE4D-F4EA-4D33-A62E-AC2CB74E9CD8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerManagementClient", "ServerManagementClient\ServerManagementClient.csproj", "{99ACC73F-5918-45B4-AD63-42E2F1558373}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -146,6 +148,18 @@ Global
 		{FAF6AE4D-F4EA-4D33-A62E-AC2CB74E9CD8}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{FAF6AE4D-F4EA-4D33-A62E-AC2CB74E9CD8}.Release|x86.ActiveCfg = Release|Any CPU
 		{FAF6AE4D-F4EA-4D33-A62E-AC2CB74E9CD8}.Release|x86.Build.0 = Release|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Debug|x86.Build.0 = Debug|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Release|x86.ActiveCfg = Release|Any CPU
+		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

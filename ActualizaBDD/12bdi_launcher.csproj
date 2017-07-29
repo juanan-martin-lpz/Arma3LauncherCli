@@ -35,7 +35,7 @@
     <PublisherName>12BDI</PublisherName>
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>publish.htm</WebPage>
-    <ApplicationRevision>4</ApplicationRevision>
+    <ApplicationRevision>6</ApplicationRevision>
     <ApplicationVersion>2.1.2.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -288,6 +288,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ServerManagementClient\ServerManagementClient.csproj">
+      <Project>{99acc73f-5918-45b4-ad63-42e2f1558373}</Project>
+      <Name>ServerManagementClient</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ServidoresData\ServidoresData.csproj">
       <Project>{18eb6e86-d249-4a33-9c81-450bab2e5a0a}</Project>
       <Name>ServidoresData</Name>

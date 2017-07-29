@@ -210,7 +210,18 @@ namespace ServidoresData
             {
                 foreach (Mod s in ModList)
                 {
-                    lista += path + s.Nombre + ";";
+                    if ((s.FromRepository == "") || (s.FromRepository == null))
+                    {
+                        lista += path + s.Nombre + ";";
+                    }
+                    else
+                    {
+                        string ptrimmed = path.TrimEnd("\\".ToCharArray());
+
+                        string p = ptrimmed.Substring(0,ptrimmed.LastIndexOf(@"\"));
+
+                        lista += p + @"\" + s.FromRepository + @"\" + s.Nombre + ";";
+                    }
                 }
             }
 

@@ -414,10 +414,13 @@ namespace ServidoresData
             string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + datemask + ".txt";
             targetlogger.FileName = filename;
 
-            basepath = folder;
+            basepath = Path.Combine(folder, Repo);
+
             nombre = Repo;
+
             basedir = new DirectoryInfo(basepath);
-            target = Path.Combine(targetFolder,nombre);
+
+            target = Path.Combine(targetFolder, nombre);
             targetdir = new DirectoryInfo(target);
 
             modlist = new ObservableCollection<Mod>();
@@ -502,9 +505,17 @@ namespace ServidoresData
             logger.Info("target : {0}", target);
             logger.Info("basedir : {0}", basedir);
 
-            logger.Info("Contenido json");
-            logger.Info("{0}", File.ReadAllText(jsonfile));
-            logger.Info("========================================================================================");
+            if (File.Exists(jsonfile))
+            {
+                logger.Info("Contenido json");
+                logger.Info("{0}", File.ReadAllText(jsonfile));
+                logger.Info("========================================================================================");
+            }
+            else
+            {
+                logger.Info("No existe ficheros.json");
+                logger.Info("========================================================================================");
+            }
 
         }
 
@@ -584,7 +595,7 @@ namespace ServidoresData
         }
 
 
-        public void CatalogRepositoryAsync(IProgress<CatalogModsProgress> progress = null)
+        public void CatalogRepository(IProgress<CatalogModsProgress> progress = null)
         {
             /*
              * EJECUCION DE SCRIPTS              
@@ -596,97 +607,93 @@ namespace ServidoresData
             int tfiles = 0;
             int tskip = 0;
             int tnew = 0;
+            
+            //DirectoryInfo rbay = Bay.GetDirectoryForRepo(Repo);
+            FileInfo fi;
+            //bool db_previa = false;
+            DirectoryInfo di = new DirectoryInfo(target);
 
-            Task t1 = new Task(
-            () =>
+            if (!di.Exists)
             {
-                //DirectoryInfo rbay = Bay.GetDirectoryForRepo(Repo);
-                FileInfo fi;
-                //bool db_previa = false;
-                DirectoryInfo di = new DirectoryInfo(target);
+                di.Create();
+            }
 
-                if (!di.Exists)
+            //fi = new FileInfo(target + @"\ficheros.db4o");
+
+            var flist = from d in basedir.GetDirectories() where d.FullName.Contains("@") select d;
+
+
+            CatalogModsProgress cp = new CatalogModsProgress();
+            cp.TotalMods = flist.Count();
+
+            foreach (DirectoryInfo fol in flist)
+            {
+                Mod m = new Mod(fol.FullName, this);
+                m.Nombre = Path.GetFileName(fol.Name);
+                m.RelativePath = fol.FullName.Replace(Path.GetFullPath(basedir.FullName), "");
+
+                modlist.Add(m);
+
+                List<FileInfo> files = fol.EnumerateFiles("*", SearchOption.AllDirectories).ToList<FileInfo>();
+
+                cp.ProgressMod++;
+
+                int total = files.Count();
+                int procesados = 0;
+
+                foreach (FileInfo fichero in files)
                 {
-                    di.Create();
-                }
 
-                //fi = new FileInfo(target + @"\ficheros.db4o");
+                    tfiles++;
 
-                var flist = from d in basedir.GetDirectories() where d.FullName.Contains("@") select d;
-
-
-                CatalogModsProgress cp = new CatalogModsProgress();
-                cp.TotalMods = flist.Count();
-
-                foreach (DirectoryInfo fol in flist)
-                {
-                    Mod m = new Mod(fol.FullName, this);
-                    m.Nombre = Path.GetFileName(fol.Name);
-                    m.RelativePath = fol.FullName.Replace(Path.GetFullPath(basedir.FullName), "");
-                    
-                    modlist.Add(m);
-
-                    List<FileInfo> files = fol.EnumerateFiles("*", SearchOption.AllDirectories).ToList<FileInfo>();
-
-                    cp.ProgressMod++;
-
-                    int total = files.Count();
-                    int procesados = 0;
-
-                    foreach (FileInfo fichero in files)
+                    if (progress != null)
                     {
+                        procesados++;
+                        cp.Mod = m.Nombre;
 
-                        tfiles++;
+                        int p = (procesados * 100) / total;
 
-                        if (progress != null)
+                        cp.Progress = p;
+
+                        progress.Report(cp);
+                    }
+
+                    //(Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), ""), fichero.Name, fichero.Length)
+
+                    var exist = from d in dcliente where d.Ruta == (Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), "")) && d.Nombre == fichero.Name && d.Tamano == fichero.Length select d;
+
+
+                    if (exist.Count() > 0)
+                    {
+                        tskip++;
+                    }
+                    else
+                    {
+                        try
                         {
-                            procesados++;
-                            cp.Mod = m.Nombre;
+                            DBData data = new DBData();
 
-                            int p = (procesados * 100) / total;
+                            data.Ruta = Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), "");
+                            data.Nombre = fichero.Name;
+                            data.Firma = Repository.xxHashSignature(fichero.FullName);
+                            data.Mod = m.Nombre;
+                            data.Tamano = fichero.Length;
 
-                            cp.Progress = p;
+                            dcliente.Add(data);
 
-                            progress.Report(cp);
+                            tnew++;
                         }
-
-                        //(Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), ""), fichero.Name, fichero.Length)
-
-                        var exist = from d in dcliente where d.Ruta == (Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName),"")) && d.Nombre == fichero.Name && d.Tamano == fichero.Length  select d;
-
-
-                        if (exist.Count() > 0)
+                        catch (Exception ex)
                         {
-                            tskip++;
-                        }
-                        else
-                        {
-                            try
-                            {
-                                DBData data = new DBData();
-
-                                data.Ruta = Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), "");
-                                data.Nombre = fichero.Name;
-                                data.Firma = Repository.xxHashSignature(fichero.FullName);
-                                data.Mod = m.Nombre;
-                                data.Tamano = fichero.Length;
-
-                                dcliente.Add(data);
-
-                                tnew++;
-                            }
-                            catch (Exception ex)
-                            {
-                                logger.Fatal("Error al insertar un registro en el catalogo del repositorio : {0}", ex.Message);
-                                logger.Fatal("================> Mod : {0}", m.Nombre);
-                                logger.Fatal("================> Fichero : {0}", fichero.FullName);
+                            logger.Fatal("Error al insertar un registro en el catalogo del repositorio : {0}", ex.Message);
+                            logger.Fatal("================> Mod : {0}", m.Nombre);
+                            logger.Fatal("================> Fichero : {0}", fichero.FullName);
 
 
-                                throw ex;
-                            }
+                            throw ex;
                         }
                     }
-                }                
+                }
 
                 CatalogoCompletedEventArgs c = new CatalogoCompletedEventArgs(null, false, null);
                 c.Total = tfiles;
@@ -694,12 +701,7 @@ namespace ServidoresData
                 c.SkippedFiles = tskip;
 
                 OnCreateRepositoryCompleted(c);
-
-            });
-
-            // Arrancamos la tarea inicial
-            t1.Start();
-
+            }
         }
 
 

@@ -1,0 +1,35 @@
+@model ServerManagerCore.Models.ApplicationUser
+
+@{
+    ViewData["Title"] = "Eliminar Usuario";
+}
+
+<h2>Delete</h2>
+
+<h3>Esta seguro de querer borrar este usuario?</h3>
+<div>
+    <h4>Usuario</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <input type="hidden" asp-for="Id" />
+        <dt>
+            @Html.DisplayNameFor(model => model.UserName)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.UserName)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Email)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Email)
+        </dd>
+    </dl>
+    
+    <form asp-action="Delete">
+        <div class="form-actions no-color">
+            <input type="submit" value="Eliminar" class="btn btn-danger" /> |
+            <a asp-action="Index" class="btn btn-primary">Volver a Todos los Usuarios</a>
+        </div>
+    </form>
+</div>

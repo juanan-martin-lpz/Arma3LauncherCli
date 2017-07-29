@@ -1,4 +1,4 @@
-@model IEnumerable<ServerManagerCore.Models.Admin.UserViewModel>
+@model IEnumerable<ServerManagerCore.Models.ApplicationUser>
 
 @{
     ViewData["Title"] = "Todos los Usuarios";
@@ -7,44 +7,35 @@
 <h2>Todos los Usuarios</h2>
 
 <p>
-    <a asp-action="Create" class="btn btn-primary">Nuevo Ususario</a>
+    <a asp-action="Create" class="btn btn-primary">Nuevo Usuario</a>
 </p>
-<div class="table-responsive">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>
-                    @Html.DisplayNameFor(model => model.Id)
-                </th>
-                <th>
-                    @Html.DisplayNameFor(model => model.UserName)
-                </th>
-                <th>
-                    @Html.DisplayNameFor(model => model.RoleName)
-                </th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>
-                        @Html.DisplayFor(model => item.Id)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(model => item.UserName)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(model => item.RoleName)
-                    </td>
-                    <td>  
-                        <a asp-action="Edit" class="btn btn-primary" asp-route-Id="@item.Id">Editar</a>
-                        <a asp-action="Details" class="btn btn-primary" asp-route-Id="@item.Id">Detalles</a>
-                        <a asp-action="SendPasswordLink" class = "btn btn-warning" asp-route-Id="@item.Id">Enviar Pwd. Link</a>
-                        <a asp-action="Delete" class = "btn btn-danger" asp-route-Id="@item.Id">Eliminar</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.UserName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Email)
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.UserName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Email)
+            </td>
+            <td>
+                <a asp-action="Edit" class="btn btn-primary" asp-route-Id="@item.Id">Editar</a>
+                <a asp-action="Details" class="btn btn-primary" asp-route-Id="@item.Id">Detalles</a>
+                <a asp-action="SendPasswordLink" class="btn btn-warning" asp-route-Id="@item.Id">Enviar Pwd. Link</a>
+                <a asp-action="Delete" class="btn btn-danger" asp-route-Id="@item.Id">Eliminar</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

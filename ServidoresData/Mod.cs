@@ -22,6 +22,8 @@ namespace ServidoresData
 
         Repository repo;
 		
+        public string FromRepository { get; set; }
+
         public Mod()
         {
         	repo = null;
@@ -55,6 +57,11 @@ namespace ServidoresData
             files = new ReadOnlyCollection<ModFile>(lst);
         }
 
+        public Mod(string fromRepository)
+        {
+            FromRepository = fromRepository;
+            repo = null;
+        }
         
         public Repository Repository
         {

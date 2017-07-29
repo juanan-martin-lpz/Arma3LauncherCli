@@ -17,7 +17,7 @@ using NLog;
 using NLog.Targets;
 using Newtonsoft.Json;
 using System.Windows.Controls;
-
+using ServerManagementClient;
 
 
 /*************************************************************************************************************************************************
@@ -394,8 +394,8 @@ namespace ActualizaBDD
 
             string carpeta_entrada = tb_carpeta_base_arma3.Text;
             string carpeta_salida = tb_carpeta_repositorio.Text;
-            string repositorio = txtRepo.Text;
-
+            //string repositorio = txtRepo.Text;
+            //string repositorio = "";
             
 
             // Proceso principal
@@ -404,32 +404,45 @@ namespace ActualizaBDD
             {
                 try
                 {
-                    //voidStringDelegate dlog = log;
-
-                    //var res = from m in mods where m.Arma == "3" select m.Name;
-
-                    re = new Repository(carpeta_entrada, repositorio, carpeta_salida, this.mods);
-                    re.CreateRepositoryCompleted += new Repository.CreateRepositoryCompletedEventHandler(GenerateRepoCompleted);
-
-                    Progress<CatalogModsProgress> prg = new Progress<CatalogModsProgress>();
-
-                    if (prg != null)
-                    {
-                        prg.ProgressChanged += (o, pr) =>
-                        {
-                            this.Dispatcher.Invoke(new System.Action(() =>
-                            {
-                                Estado2.Content = "Procesando " + pr.ProgressMod.ToString() + @"/" + pr.TotalMods.ToString();
-                                SubEstado2.Content = pr.Mod;
-                                progreso2.Value = pr.Progress;
-                            }));
-
-                        };
-                    }
-
-                    re.CatalogRepositoryAsync(prg);
-
+                    string[] dirs = Directory.GetDirectories(carpeta_entrada);
                     
+                    foreach (string repo in dirs)
+                    {
+                        string reponame = Path.GetFileName(repo);
+
+                        /*
+                        if (!Directory.Exists(targetpath))
+                        {
+                            Directory.CreateDirectory(targetpath);
+                        }
+                        */
+
+                        //voidStringDelegate dlog = log;
+
+                        //var res = from m in mods where m.Arma == "3" select m.Name;
+
+                        re = new Repository(carpeta_entrada, reponame, carpeta_salida, this.mods);
+                        re.CreateRepositoryCompleted += new Repository.CreateRepositoryCompletedEventHandler(GenerateRepoCompleted);
+
+                        Progress<CatalogModsProgress> prg = new Progress<CatalogModsProgress>();
+
+                        if (prg != null)
+                        {
+                            prg.ProgressChanged += (o, pr) =>
+                            {
+                                this.Dispatcher.Invoke(new System.Action(() =>
+                                {
+                                    Estado2.Content = "Procesando (" + reponame +") " + pr.ProgressMod.ToString() + @"/" + pr.TotalMods.ToString();
+                                    SubEstado2.Content = pr.Mod;
+                                    progreso2.Value = pr.Progress;
+                                }));
+
+                            };
+                        }
+
+                        re.CatalogRepository(prg);
+
+                    }
 
                     //
                     /*
@@ -594,8 +607,7 @@ namespace ActualizaBDD
 
             string carpeta_entrada = tb_carpeta_base_arma3.Text;
             string carpeta_salida = tb_carpeta_repositorio.Text;
-            string repositorio = txtRepo.Text;
-
+            
             List<RepositoryProxy> reposl = new List<RepositoryProxy>();
 
             DirectoryInfo wrepo = new DirectoryInfo(carpeta_salida);
@@ -744,6 +756,47 @@ namespace ActualizaBDD
 
         private void Actualizar_Click(object sender, RoutedEventArgs e)
         {
+            #region "New Update Process"
+
+            logger.Info("Iniciando proceso de actualizacion NG");
+            apagar_botones();
+            Estado.Content = "Actualizando Mods";
+
+            proxy = ((RepositoryProxy)lstRepositorios.SelectedItem != null ? (RepositoryProxy)lstRepositorios.SelectedItem : (RepositoryProxy)lstRepositorios.Items[0]);
+
+            string carpeta_juego = "";
+            string varma = radArma3.IsChecked == true ? "3" : "2";
+
+
+            if (radDefaultFolder.IsChecked.Value)
+            {
+                carpeta_juego = tb_carpeta_arma3.Text;
+            }
+            else
+            {
+                carpeta_juego = txtUserDefined.Text + @"/" + proxy.Nombre;
+            }
+
+            if (!Directory.Exists(carpeta_juego))
+            {
+                Directory.CreateDirectory(carpeta_juego);
+            }
+           
+
+            // ejecutamos la accion en otra hebra para no bloquear el UI
+            //var t = Task.Run(() =>
+            //{
+                // Core action
+            ProcessUpdate(db_name, proxy, carpeta_juego);
+            //});
+
+            //Task.WaitAll();
+
+            #endregion
+
+
+            #region "Obsolete"
+            /*
 
             logger.Info("Iniciando proceso de actualizacion");
 
@@ -776,7 +829,7 @@ namespace ActualizaBDD
             }
 
             // Descargamos la base de datos del servidor y repositorio indicado
-             db_name = source.GetRepositoryCatalog(proxy.Nombre);
+            db_name = source.GetRepositoryCatalog(proxy.Nombre);
 
             // Creamos una instancia del repositorio local
             Estado.Content = "Catalogando Mods";
@@ -819,50 +872,232 @@ namespace ActualizaBDD
                  *      PlanProgressChanged     UpgradeRepositoryCompleted 
                  *      
                  * *************************************************************************************************************************/
+            /*
+            // Catalogado de addons en equipo cliente
+            cliente.CatalogoCompleted += new Repository.CatalogoCompletedEventHandler(catalogcomplete);
 
-                // Catalogado de addons en equipo cliente
-                cliente.CatalogoCompleted += new Repository.CatalogoCompletedEventHandler(catalogcomplete);
+            // Comparacion de catalagos entre cliente y servidor
+            cliente.CatalogoCompareCompleted += new Repository.CatalogoCompareCompletedEventHandler(compareCompleted);
 
-                // Comparacion de catalagos entre cliente y servidor
-                cliente.CatalogoCompareCompleted += new Repository.CatalogoCompareCompletedEventHandler(compareCompleted);
+            // Progreso de la actualizacion
+            cliente.UpgradeRepositoryProgressChanged += new Repository.UpgradeRepositoryProgressChangedEventHandler(updateTasks);
 
-                // Progreso de la actualizacion
-                cliente.UpgradeRepositoryProgressChanged += new Repository.UpgradeRepositoryProgressChangedEventHandler(updateTasks);
+            // Antes de invocar la actualizacion
+            //cliente.UpgradeRepositoryBeforeExecute += new Repository.UpgradeRepositoryBeforeExecuteEventHandler(updateTasks);
 
-                // Antes de invocar la actualizacion
-                //cliente.UpgradeRepositoryBeforeExecute += new Repository.UpgradeRepositoryBeforeExecuteEventHandler(updateTasks);
+            // Progreso global
+            cliente.PlanProgressChanged += new Repository.PlanProgressChangedEventHandler(progresoPlan);
 
-                // Progreso global
-                cliente.PlanProgressChanged += new Repository.PlanProgressChangedEventHandler(progresoPlan);
+            // Actualizacion terminada
+            cliente.UpgradeRepositoryCompleted += new Repository.UpgradeRepositoryCompletedEventHandler(tareasCompletadas);
 
-                // Actualizacion terminada
-                cliente.UpgradeRepositoryCompleted += new Repository.UpgradeRepositoryCompletedEventHandler(tareasCompletadas);
 
+
+            //proxy.MustUpdate = false;
+        }
+        catch (Exception ex)
+        {
+            logger.Fatal("Se ha producido una excepcion {0}", ex.Message);
+            throw ex;
+        }
+
+        Estado.Content = "Trabajando...";
+
+        try
+        {
+
+            logger.Info("Iniciando el catalogo de addons");
+
+            cliente.CatalogFolderAsync(bay, proxy.Nombre, prg);
+        }
+        catch (Exception ex)
+        {
+            logger.Fatal("Se ha producido una excepcion al catalogar addons {0}", ex.Message);
+
+            throw ex;
+        }
+
+        */
+            #endregion
+        }
+
+
+        private async Task<bool> ProcessUpdate(string db_name, RepositoryProxy p, string targetFolder)
+        {
+            // Descargamos ficheros.json
+           
+            string ficherosjson = $"{webrepository}/{proxy.Nombre}/ficheros.json";
+            string ficherosjsontarget = @"C:\Qt\ficheros.json";
+
+            if ( ! await DownloadFileAsync(ficherosjson, ficherosjsontarget))
+            {
+                logger.Error($"Error al descargar {ficherosjson}");
+                return false;
+            }
+
+            // Deserializamos ficheros.json
+            var content = File.ReadAllText(ficherosjsontarget);
+
+            List<ServerManagementClient.Models.ModViewModel> mods = new List<ServerManagementClient.Models.ModViewModel>();
+
+            mods = JsonConvert.DeserializeObject<List<ServerManagementClient.Models.ModViewModel>>(content);
+
+            IFileHash compute_hash = new FileHashXXHash();
+
+            int globalRetries = 0;
+
+            foreach (ServerManagementClient.Models.ModViewModel mod in mods)
+            {
+                if (globalRetries == 5)
+                {
+                    logger.Error($"Parece que existen problemas para descargar algunos archivos. Notifique al administrador");
+                    SubEstado.Content = $"Ha habido problemas durante la descarga. Operacion abortada";
+                    break;
+                }
+
+                string folder = $"{targetFolder}\\{mod.Ruta}";
+
+                string filename = $"{folder}\\{mod.Nombre}";
                 
+                if (!Directory.Exists(folder))
+                {
+                    Directory.CreateDirectory(folder);
+                }
 
-                //proxy.MustUpdate = false;
+                if (File.Exists(filename))
+                {
+                    // check signature
+                    SubEstado.Content = $"Chequeando {filename}";
+                    string file_hash = compute_hash.ComputeHash(filename);
+
+                    int nretries = 1;
+                    bool canContinue = false;
+
+                    while (!canContinue)
+                    {
+                        if (file_hash != mod.Firma)
+                        {
+                            string f = $"{webrepository}/{proxy.Nombre}/{mod.Ruta}/{mod.Nombre}";
+
+                            SubEstado.Content = $"Firma erronea, descargando {mod.Nombre} de nuevo";
+                            logger.Warn($"La replica de {f} en el equipo no tiene la misma firma que en el servidor");
+                            logger.Warn($"El fichero {f} se va a descargar otra vez");
+
+                            // Si no son iguales, descargamos
+
+                            if (!await DownloadFileAsync(f, filename))
+                            {
+                                nretries++;
+                                SubEstado.Content = $"Error en la descarga, descargando {mod.Nombre} de nuevo {nretries}/3";
+
+                                logger.Error($"Error al descargar {mod.Nombre}");                                
+                            }
+
+                            if (nretries == 3)
+                            {
+                                SubEstado.Content = $"Imposible descargar {mod.Nombre}. Se procede con el siguiente";
+
+                                logger.Error($"Ha habido un problema al descargar {mod.Nombre}, pero se puede continuar");
+                                canContinue = true;
+
+                                globalRetries++;
+                            }
+
+                            canContinue = true;
+                        }
+                        else
+                        {
+                            canContinue = true;
+                        }
+                    }
+                }
+                else
+                {        
+                    string f = $"{webrepository}/{proxy.Nombre}/{mod.Ruta}/{mod.Nombre}";
+
+                    SubEstado.Content = $"Descargando {mod.Nombre}";
+
+                    if (!await DownloadFileAsync(f, filename))
+                    {
+                        logger.Error($"Error al descargar {mod.Nombre}");
+                    }
+
+                    // check signature
+
+                    SubEstado.Content = $"Chequeando {filename}";
+                    string file_hash = compute_hash.ComputeHash(filename);
+
+                    int nretries = 1;
+                    bool canContinue = false;
+
+                    while (!canContinue)
+                    {
+                        if (file_hash != mod.Firma)
+                        {
+                            SubEstado.Content = $"Firma erronea, descargando {mod.Nombre} de nuevo";
+                            logger.Warn($"La replica de {f} en el equipo no tiene la misma firma que en el servidor");
+                            logger.Warn($"El fichero {f} se va a descargar otra vez");
+
+                            // Si no son iguales, descargamos
+
+                            if (!await DownloadFileAsync(f, filename))
+                            {
+                                nretries++;
+                                SubEstado.Content = $"Error en la descarga, descargando {mod.Nombre} de nuevo {nretries}/3";
+
+                                logger.Error($"Error al descargar {mod.Nombre}");
+                            }
+
+                            if (nretries == 3)
+                            {
+                                SubEstado.Content = $"Imposible descargar {mod.Nombre}. Se procede con el siguiente";
+
+                                logger.Error($"Ha habido un problema al descargar {mod.Nombre}, pero se puede continuar");
+                                canContinue = true;
+
+                                globalRetries++;
+                            }
+
+                            canContinue = true;
+                        }
+                        else
+                        {
+                            canContinue = true;
+                        }
+                    }
+                }
             }
-            catch (Exception ex)
+
+            return true;
+
+        }
+
+
+        private async Task<bool> DownloadFileAsync(string url, string target)
+        {
+            using (var client = new HttpClientDownload(url, target))
             {
-                logger.Fatal("Se ha producido una excepcion {0}", ex.Message);
-                throw ex;
+                client.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) => {
+                    this.progreso.Value = (double)progressPercentage;
+                };
+
+                try
+                {
+                    logger.Info($"Descargando el fichero {url} en {target} ");
+                    await client.StartDownload();
+                }
+                catch (Exception e)
+
+                {
+                    logger.Error($"La descarga del fichero {url} ha fallado");
+                    logger.Error($"{e.Message}");
+
+                    return false;
+                }
             }
 
-            Estado.Content = "Trabajando...";
+            return true;
 
-            try
-            {
-                
-                logger.Info("Iniciando el catalogo de addons");
-
-                cliente.CatalogFolderAsync(bay, proxy.Nombre, prg);
-            }
-            catch (Exception ex)
-            {
-                logger.Fatal("Se ha producido una excepcion al catalogar addons {0}", ex.Message);
-
-                throw ex;
-            }
         }
 
         private void tareasCompletadas(object sender, AsyncCompletedEventArgs e)
