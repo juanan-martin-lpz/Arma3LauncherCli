@@ -8,9 +8,10 @@ using ServerManagerCore.Data;
 namespace ServerManagerCore.Migrations.Web12BDIData
 {
     [DbContext(typeof(Web12BDIDataContext))]
-    partial class Web12BDIDataContextModelSnapshot : ModelSnapshot
+    [Migration("20170729192027_Modfile")]
+    partial class Modfile
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.2")

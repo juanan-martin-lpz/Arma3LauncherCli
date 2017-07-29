@@ -6,21 +6,23 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ServerManagerCore.Models.Repository
 {
-    public class Mod
+    public class ModFile
     {
         [Key]
         public int Id { get; set; }
 
         [Required]
-        public string Name { get; set; }
-
-        [Required]
         public string RelativePath { get; set; }
 
-        public string SteamId { get; set; }
-        public string DownloadUrl { get; set; }
+        [Required]
+        public string Filename { get; set; }
 
-        public IList<ModFile> Files { get; set; }
-        public int RepositoryId { get; set; }
+        [Required]
+        public string Hash { get; set; }
+
+        [Required]
+        public long Length { get; set; }
+
+        public int ModId { get; set; }
     }
 }
