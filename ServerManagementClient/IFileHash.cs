@@ -9,5 +9,6 @@ namespace ServerManagementClient
     public interface IFileHash
     {
         string ComputeHash(string Filename);
+        Task<string> ComputeHashAsync(string Filename);
     }
 }

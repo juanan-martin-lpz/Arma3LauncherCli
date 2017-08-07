@@ -158,7 +158,14 @@ namespace ServidoresData
                                             {
                                                 fname = "modorder.txt";
                                                 trg = Path.Combine(repostr, fname);
-                                            }                                            
+                                            }
+
+                                            string targetdir = Path.Combine(servidores_path.Parent.FullName, "Repositories", repostr);
+
+                                            if (!Directory.Exists(targetdir))
+                                            {
+                                                Directory.CreateDirectory(targetdir);
+                                            }
 
                                             dl2.DownloadFile(webrepository, trg, Path.Combine(servidores_path.Parent.FullName, "Repositories", trg));
 
@@ -173,6 +180,9 @@ namespace ServidoresData
                                                 mm.FromRepository = repostr;
                                                 s.ModList.Add(mm);
                                             }
+
+                                            morder.Close();
+                                            
                                         }
                                         else
                                         {

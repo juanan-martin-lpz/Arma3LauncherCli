@@ -55,7 +55,7 @@ using ServerManagementClient;
  * ***********************************************************************************************************************************************/
 
 namespace ActualizaBDD
-{    
+{
     /// <summary>
     /// Lógica de interacción para MainWindow.xaml
     /// </summary>
@@ -63,6 +63,7 @@ namespace ActualizaBDD
 
     public partial class MainWindow : Window
     {
+        SynchronizationContext synchronizationContext;
 
         internal string servidor_12bdi = "188.165.254.137";
         private System.Windows.Media.Brush btnBrush;
@@ -79,9 +80,9 @@ namespace ActualizaBDD
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
-        
+
         Diagnosticos diag;
-        
+
         Repository cliente;
         Repositories rs;
 
@@ -105,9 +106,9 @@ namespace ActualizaBDD
             string filename = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\12bdi_launcher\\" + "log_" + datemask + ".txt";
             target.FileName = filename;
 
-            
+
             logger.Info("Iniciando sesion : {0}", System.DateTime.Now);
-            
+
 
             InitializeComponent();
 
@@ -116,9 +117,9 @@ namespace ActualizaBDD
             //this.DataContext = servers;
 
         }
-        
 
-        
+
+
 
         private void Window_Loaded_1(object sender, RoutedEventArgs e)
         {
@@ -149,7 +150,7 @@ namespace ActualizaBDD
             logger.Info("=================================================================================");
             logger.Info("Configuracion");
             logger.Info("Arma3 folder {0}", tb_carpeta_arma3.Text);
-            logger.Info("Default folder {0}", radDefaultFolder.IsChecked );
+            logger.Info("Default folder {0}", radDefaultFolder.IsChecked);
             logger.Info("UserDefined folder {0}", radUserDefinedFolder.IsChecked == true ? txtUserDefined.Text : "No definido");
             logger.Info("=================================================================================");
 
@@ -186,7 +187,7 @@ namespace ActualizaBDD
 
             repositories = new Repositories();
 
-            
+
             if ((repositories != null) && (repositories.RepositoryProxyList != null))
             {
                 lstRepositorios.ItemsSource = repositories.RepositoryProxyList;
@@ -249,7 +250,7 @@ namespace ActualizaBDD
 
             }
         }
-      
+
 
 
         // Guardamos la configuración
@@ -327,7 +328,7 @@ namespace ActualizaBDD
             System.Windows.Application.Current.Shutdown();
         }
 
-        
+
         // Navegación carpetas
         private void btn_carpeta_Click_arma2(object sender, RoutedEventArgs e)
         {
@@ -385,9 +386,160 @@ namespace ActualizaBDD
             t1.Start();
         }
 
+        private async Task<bool> GenerateRepositories()
+        {
+
+            Dictionary<String, String> modlist = new Dictionary<string, string>();
+
+            List<RepositoryProxy> repolist = new List<RepositoryProxy>();
+
+            IFileHash compute_hash = new FileHashXXHash();
+
+            string carpeta_entrada = tb_carpeta_base_arma3.Text;
+
+            string[] dirs = Directory.GetDirectories(carpeta_entrada);
+
+            int count = dirs.Count();
+            int current = 0;
+
+            List<string> lineas = new List<string>();
+
+            actualizaEstado($"Generando (0/{count}");
+
+            foreach (string repo in dirs)
+            {
+                ObservableCollection<DBData> dcliente = new ObservableCollection<DBData>();
+
+                string reponame = Path.GetFileName(repo);
+
+                RepositoryProxy rproxy = new RepositoryProxy();
+
+                rproxy.Nombre = reponame;
+
+                DirectoryInfo basedir = new DirectoryInfo(repo);
+
+                current++;
+
+                actualizaEstado($"Generando {reponame} ({current}/{count}");
+
+                var flist = from d in basedir.GetDirectories() where d.FullName.Contains("@") select d;
+
+                int modcount = flist.Count();
+                int modcurrent = 0;
+
+                // Procesamos cada fichero
+                foreach (DirectoryInfo fol in flist)
+                {
+
+                    modcurrent++;
+
+                    actualizaSubEstado($"Procesando {fol.Name} ({modcurrent}/{modcount})");
+
+                    actualizaProgreso((modcurrent * 100) / modcount);
+
+                    Mod m = new Mod(fol.FullName, null);
+                    m.Nombre = Path.GetFileName(fol.Name);
+                    m.RelativePath = fol.FullName.Replace(Path.GetFullPath(basedir.FullName), "");
+
+                    rproxy.Mods.Add(new ModProxy() { Nombre = m.Nombre, Icon = null });
+
+                    if (!modlist.ContainsKey(m.Nombre))
+                    {
+                        modlist.Add(m.Nombre, m.Nombre);
+                    }
+
+                    List<FileInfo> files = fol.EnumerateFiles("*", SearchOption.AllDirectories).ToList<FileInfo>();
+
+                    int totalfiles = files.Count();
+                    int totalprogress = 0;
+
+                    foreach (FileInfo fichero in files)
+                    {
+
+                        totalprogress++;
+
+                        var exist = from d in dcliente where d.Ruta == (Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), "")) && d.Nombre == fichero.Name && d.Tamano == fichero.Length select d;
+
+
+                        if (exist.Count() == 0)
+                        {
+                            try
+                            {
+                                DBData data = new DBData();
+
+                                data.Ruta = Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), "");
+                                data.Nombre = fichero.Name;
+
+                                actualizaSubEstado($"Calculando firma para {data.Nombre}");
+
+                                data.Firma = await compute_hash.ComputeHashAsync(fichero.FullName);
+                                data.Mod = m.Nombre;
+                                data.Tamano = fichero.Length;
+
+                                dcliente.Add(data);
+
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.Fatal("Error al insertar un registro en el catalogo del repositorio : {0}", ex.Message);
+                                logger.Fatal("================> Mod : {0}", m.Nombre);
+                                logger.Fatal("================> Fichero : {0}", fichero.FullName);
+
+                                throw ex;
+                            }
+                        }
+                    }
+
+                    // Escribimos el fichero json
+                    if (File.Exists(basedir.FullName + @"\ficheros.json"))
+                    {
+                        File.Delete(basedir.FullName + @"\ficheros.json");
+                    }
+
+                    actualizaSubEstado("Escribiendo ficheros.json");
+
+                    File.WriteAllText(basedir.FullName + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));
+
+                }
+
+                // Anadimos el repo a la lista
+                repolist.Add(rproxy);
+
+            }
+
+            foreach (string mod in modlist.Keys)
+            {
+                lineas.Add($"3|{mod}");
+            }
+
+            File.WriteAllLines(Path.Combine(carpeta_entrada, "modlist.txt"), lineas.ToArray());
+
+            // Escribimos el fichero json
+            if (File.Exists(carpeta_entrada + @"\repositories.json"))
+            {
+                File.Delete(carpeta_entrada + @"\repositories.json");
+            }
+
+            actualizaSubEstado("Escribiendo repositories.json");
+
+            File.WriteAllText(carpeta_entrada + @"\repositories.json", JsonConvert.SerializeObject(repolist));
+
+            return true;
+        }
+
         private void btn_crear_repositorio_a3_Click(object sender, RoutedEventArgs e)
         {
-            
+                        synchronizationContext = SynchronizationContext.Current;
+
+
+            GenerateRepositories().ContinueWith((result) =>
+            {
+                resetEstado("Terminado");
+            });
+
+            #region "OldCode"
+
+            /*
             apagar_botones();
 
             //log("Generando repositorio: ");
@@ -396,7 +548,7 @@ namespace ActualizaBDD
             string carpeta_salida = tb_carpeta_repositorio.Text;
             //string repositorio = txtRepo.Text;
             //string repositorio = "";
-            
+
 
             // Proceso principal
             Task t1 = new Task(
@@ -405,7 +557,7 @@ namespace ActualizaBDD
                 try
                 {
                     string[] dirs = Directory.GetDirectories(carpeta_entrada);
-                    
+
                     foreach (string repo in dirs)
                     {
                         string reponame = Path.GetFileName(repo);
@@ -420,7 +572,7 @@ namespace ActualizaBDD
                         //voidStringDelegate dlog = log;
 
                         //var res = from m in mods where m.Arma == "3" select m.Name;
-
+                        /*
                         re = new Repository(carpeta_entrada, reponame, carpeta_salida, this.mods);
                         re.CreateRepositoryCompleted += new Repository.CreateRepositoryCompletedEventHandler(GenerateRepoCompleted);
 
@@ -432,7 +584,7 @@ namespace ActualizaBDD
                             {
                                 this.Dispatcher.Invoke(new System.Action(() =>
                                 {
-                                    Estado2.Content = "Procesando (" + reponame +") " + pr.ProgressMod.ToString() + @"/" + pr.TotalMods.ToString();
+                                    Estado2.Content = "Procesando (" + reponame + ") " + pr.ProgressMod.ToString() + @"/" + pr.TotalMods.ToString();
                                     SubEstado2.Content = pr.Mod;
                                     progreso2.Value = pr.Progress;
                                 }));
@@ -455,6 +607,7 @@ namespace ActualizaBDD
 
                     r.crear(carpeta_entrada, carpeta_salida);
                     */
+                    /*
                 }
                 catch (Exception x)
                 {
@@ -472,12 +625,16 @@ namespace ActualizaBDD
 
             // Arrancamos la tarea inicial
             t1.Start();
-            
+
+            */
+            #endregion
         }
 
         private void GenerateRepoCompleted(object sender, Repository.CatalogoCompletedEventArgs e)
         {
             Progress<PublishModsProgress> pprg = new Progress<PublishModsProgress>();
+
+            Repository target = (Repository)sender;
 
             if (pprg != null)
             {
@@ -493,7 +650,7 @@ namespace ActualizaBDD
                 };
             }
 
-            re.Publish(pprg);
+            target.Publish(pprg);
 
 
 
@@ -541,7 +698,7 @@ namespace ActualizaBDD
             {
                 testPB.Value = diag.CurrentInputLevel;
             }
-            
+
         }
 
         private void Test_Red_Click(object sender, RoutedEventArgs e)
@@ -550,10 +707,10 @@ namespace ActualizaBDD
 
             if (Test_Red.Content.ToString() == "Probar")
             {
-                
+
                 Test_Red.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Lavender);
 
-                
+
                 if (diag.ping_servidor12bdi(servidor_12bdi, 3, 100))
                 {
                     Test_Red.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.LightYellow);
@@ -564,13 +721,13 @@ namespace ActualizaBDD
                     Test_Red.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
 
                 }
-                
+
             }
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-           Utiles.ejecuta_proceso("dxdiag", "/whql:on", "",true);
+            Utiles.ejecuta_proceso("dxdiag", "/whql:on", "", true);
         }
 
 
@@ -596,7 +753,7 @@ namespace ActualizaBDD
             serv = ((Servidor)lstServidores.SelectedItem != null ? (Servidor)lstServidores.SelectedItem : (Servidor)lstServidores.Items[0]);
 
 
-            xpresslauncher launcher = new xpresslauncher(tb_carpeta_arma2.Text,tb_carpeta_arma3.Text, serv);
+            xpresslauncher launcher = new xpresslauncher(tb_carpeta_arma2.Text, tb_carpeta_arma3.Text, serv);
 
             launcher.ShowDialog();
             //launcher.Show();
@@ -607,12 +764,12 @@ namespace ActualizaBDD
 
             string carpeta_entrada = tb_carpeta_base_arma3.Text;
             string carpeta_salida = tb_carpeta_repositorio.Text;
-            
+
             List<RepositoryProxy> reposl = new List<RepositoryProxy>();
 
-            DirectoryInfo wrepo = new DirectoryInfo(carpeta_salida);
+            string[] dirs = Directory.GetDirectories(carpeta_entrada);
 
-            
+            DirectoryInfo wrepo = new DirectoryInfo(carpeta_salida);
 
             List<string> lines = new List<string>();
             FileInfo modlist = new FileInfo(carpeta_salida + @"\modlist.txt");
@@ -642,14 +799,15 @@ namespace ActualizaBDD
                 RepositoryProxy rr = new RepositoryProxy() { Nombre = i.Name };
                 generateModFile(lines, "3", i, rr);
                 reposl.Add(rr);
+
+                File.WriteAllText(carpeta_salida + @"\repositories.json", JsonConvert.SerializeObject(reposl));
+
+                System.IO.File.WriteAllLines(modlist.FullName, lines);
+
             }
-
-            File.WriteAllText(carpeta_salida + @"\repositories.json", JsonConvert.SerializeObject(reposl));
-
-            System.IO.File.WriteAllLines(modlist.FullName, lines);
         }
 
-        private void generateModFile(List<string> lines,string juego,DirectoryInfo mod, RepositoryProxy rp)
+        private void generateModFile(List<string> lines, string juego, DirectoryInfo mod, RepositoryProxy rp)
         {
 
             var todos = from DirectoryInfo i in mod.GetDirectories() select i;
@@ -688,17 +846,17 @@ namespace ActualizaBDD
 
             System.Windows.MessageBox.Show("Archivo RPT subido al servidor.", "12BDI_lanzador", MessageBoxButton.OK, MessageBoxImage.Information);
             */
-            
+
         }
 
 
         private void Launcher_Click(object sender, RoutedEventArgs e)
         {
 
-            serv = ((Servidor)lstServidores.SelectedItem != null ? (Servidor)lstServidores.SelectedItem : (Servidor) lstServidores.Items[0]);
+            serv = ((Servidor)lstServidores.SelectedItem != null ? (Servidor)lstServidores.SelectedItem : (Servidor)lstServidores.Items[0]);
 
             string conexion = @"-connect=" + serv.IP + @" -port=" + serv.Puerto + @" -password=" + serv.Password;
-            
+
             string lista_mods = "";
             string executable = "";
             string modp = "";
@@ -720,11 +878,11 @@ namespace ActualizaBDD
 
             }
 
-            
+
 
             if (radDefaultFolder.IsChecked.Value)
             {
-                 lista_mods = @" -mod=" + serv.ModListToString();
+                lista_mods = @" -mod=" + serv.ModListToString();
             }
             else
             {
@@ -732,7 +890,7 @@ namespace ActualizaBDD
                 lista_mods = @" -mod=" + serv.ModListToString(modp);
             }
 
-            
+
 
             string parametros = (cb_conexion_directa.IsChecked.HasValue && cb_conexion_directa.IsChecked.Value == true ? conexion : "") + lista_mods + " " + tb_parametros_extra_arma3.Text;
 
@@ -754,7 +912,7 @@ namespace ActualizaBDD
 
         }
 
-        private void Actualizar_Click(object sender, RoutedEventArgs e)
+        private async void Actualizar_Click(object sender, RoutedEventArgs e)
         {
             #region "New Update Process"
 
@@ -781,16 +939,19 @@ namespace ActualizaBDD
             {
                 Directory.CreateDirectory(carpeta_juego);
             }
-           
 
-            // ejecutamos la accion en otra hebra para no bloquear el UI
-            //var t = Task.Run(() =>
-            //{
-                // Core action
-            ProcessUpdate(db_name, proxy, carpeta_juego);
-            //});
+            synchronizationContext = SynchronizationContext.Current;
 
-            //Task.WaitAll();
+            // Core action
+            //lstRepositorios.IsEnabled = false;
+            //UpdateAllRepos.IsEnabled = false;
+
+            ProcessUpdate(db_name, proxy, carpeta_juego).ContinueWith((result) =>
+            {
+
+                resetEstado("Terminado");
+
+            });
 
             #endregion
 
@@ -807,8 +968,8 @@ namespace ActualizaBDD
             
             proxy = ((RepositoryProxy)lstRepositorios.SelectedItem != null ? (RepositoryProxy)lstRepositorios.SelectedItem : (RepositoryProxy)lstRepositorios.Items[0]);
 
-            string carpeta_juego = "";
-            string varma = radArma3.IsChecked == true ? "3" : "2";
+            //string carpeta_juego = "";
+            //string varma = radArma3.IsChecked == true ? "3" : "2";
 
 
             if (radDefaultFolder.IsChecked.Value)
@@ -891,7 +1052,7 @@ namespace ActualizaBDD
             // Actualizacion terminada
             cliente.UpgradeRepositoryCompleted += new Repository.UpgradeRepositoryCompletedEventHandler(tareasCompletadas);
 
-
+            
 
             //proxy.MustUpdate = false;
         }
@@ -919,15 +1080,69 @@ namespace ActualizaBDD
 
         */
             #endregion
+
         }
 
+        private void actualizaProgreso(long prog)
+        {
+            synchronizationContext.Send(new SendOrPostCallback(e =>
+            {
+                progreso.Value = prog ;
+                progreso.Refresh();
 
+            }), prog);
+        }
+
+        private void actualizaEstado(string estado)
+        {
+            synchronizationContext.Send(new SendOrPostCallback(e =>
+            {
+                Estado.Content = e;
+                Estado.Refresh();
+                
+            }),estado);
+        }
+
+        private void actualizaSubEstado(string estado)
+        {
+            
+            synchronizationContext.Send(new SendOrPostCallback(e =>
+            {
+                SubEstado.Content = e;
+                SubEstado.Refresh();
+                
+            }), estado);
+            
+        }
+
+        private void resetEstado(string estado)
+        {
+
+            synchronizationContext.Send(new SendOrPostCallback(e =>
+            {
+                Estado.Content = e;
+                Estado.Refresh();
+                SubEstado.Content = "";
+                SubEstado.Refresh();
+                progreso.Value = 0;
+                progreso.Refresh();
+
+                lstRepositorios.IsEnabled = !lstRepositorios.IsEnabled;
+                UpdateAllRepos.IsEnabled = !UpdateAllRepos.IsEnabled;
+
+            }), estado);
+
+        }
         private async Task<bool> ProcessUpdate(string db_name, RepositoryProxy p, string targetFolder)
         {
+            resetEstado("Iniciando...");
+
             // Descargamos ficheros.json
-           
-            string ficherosjson = $"{webrepository}/{proxy.Nombre}/ficheros.json";
-            string ficherosjsontarget = @"C:\Qt\ficheros.json";
+            
+            string ficherosjson = $"{webrepository}/{p.Nombre}/ficheros.json";
+            string ficherosjsontarget = $"{bay.ToDirectoryInfo().FullName}\\{bay.GetDirectoryForRepo(p.Nombre)}\\ficheros.json";
+
+            //string ficherosjsontarget = @"C:\Qt\ficheros.json";
 
             if ( ! await DownloadFileAsync(ficherosjson, ficherosjsontarget))
             {
@@ -945,15 +1160,24 @@ namespace ActualizaBDD
             IFileHash compute_hash = new FileHashXXHash();
 
             int globalRetries = 0;
+            int count = 0;
 
             foreach (ServerManagementClient.Models.ModViewModel mod in mods)
             {
+
+                
                 if (globalRetries == 5)
                 {
                     logger.Error($"Parece que existen problemas para descargar algunos archivos. Notifique al administrador");
-                    SubEstado.Content = $"Ha habido problemas durante la descarga. Operacion abortada";
+
+                    actualizaSubEstado($"Ha habido problemas durante la descarga. Operacion abortada");
+
                     break;
                 }
+
+                count++;
+
+                actualizaEstado($"Actualizando mods ({count}/{mods.Count})");
 
                 string folder = $"{targetFolder}\\{mod.Ruta}";
 
@@ -967,8 +1191,9 @@ namespace ActualizaBDD
                 if (File.Exists(filename))
                 {
                     // check signature
-                    SubEstado.Content = $"Chequeando {filename}";
-                    string file_hash = compute_hash.ComputeHash(filename);
+                    actualizaSubEstado($"Chequeando {filename}");
+                    
+                    string file_hash = await compute_hash.ComputeHashAsync(filename);
 
                     int nretries = 1;
                     bool canContinue = false;
@@ -977,9 +1202,10 @@ namespace ActualizaBDD
                     {
                         if (file_hash != mod.Firma)
                         {
-                            string f = $"{webrepository}/{proxy.Nombre}/{mod.Ruta}/{mod.Nombre}";
+                            string f = $"{webrepository}/{p.Nombre}/{mod.Ruta}/{mod.Nombre}";
 
-                            SubEstado.Content = $"Firma erronea, descargando {mod.Nombre} de nuevo";
+                            actualizaSubEstado($"Firma erronea, descargando {mod.Nombre} de nuevo");
+
                             logger.Warn($"La replica de {f} en el equipo no tiene la misma firma que en el servidor");
                             logger.Warn($"El fichero {f} se va a descargar otra vez");
 
@@ -988,15 +1214,15 @@ namespace ActualizaBDD
                             if (!await DownloadFileAsync(f, filename))
                             {
                                 nretries++;
-                                SubEstado.Content = $"Error en la descarga, descargando {mod.Nombre} de nuevo {nretries}/3";
+                                actualizaSubEstado($"Error en la descarga, descargando {mod.Nombre} de nuevo {nretries}/3");
 
                                 logger.Error($"Error al descargar {mod.Nombre}");                                
                             }
 
                             if (nretries == 3)
                             {
-                                SubEstado.Content = $"Imposible descargar {mod.Nombre}. Se procede con el siguiente";
-
+                                actualizaSubEstado($"Imposible descargar {mod.Nombre}. Se procede con el siguiente");
+                                
                                 logger.Error($"Ha habido un problema al descargar {mod.Nombre}, pero se puede continuar");
                                 canContinue = true;
 
@@ -1007,66 +1233,78 @@ namespace ActualizaBDD
                         }
                         else
                         {
+                            actualizaSubEstado($"{mod.Nombre} esta OK");
+
                             canContinue = true;
                         }
                     }
                 }
                 else
                 {        
-                    string f = $"{webrepository}/{proxy.Nombre}/{mod.Ruta}/{mod.Nombre}";
+                    string f = $"{webrepository}/{p.Nombre}/{mod.Ruta}/{mod.Nombre}";
 
-                    SubEstado.Content = $"Descargando {mod.Nombre}";
+                    actualizaSubEstado($"Descargando {mod.Nombre}");
 
                     if (!await DownloadFileAsync(f, filename))
                     {
                         logger.Error($"Error al descargar {mod.Nombre}");
+
+                        actualizaSubEstado($"Imposible descargar {mod.Nombre}. Se procede con el siguiente");
+
                     }
-
-                    // check signature
-
-                    SubEstado.Content = $"Chequeando {filename}";
-                    string file_hash = compute_hash.ComputeHash(filename);
-
-                    int nretries = 1;
-                    bool canContinue = false;
-
-                    while (!canContinue)
+                    else
                     {
-                        if (file_hash != mod.Firma)
+                        // check signature
+
+                        actualizaSubEstado($"Chequeando {filename}");
+
+                        string file_hash = compute_hash.ComputeHash(filename);
+
+                        int nretries = 1;
+                        bool canContinue = false;
+
+                        while (!canContinue)
                         {
-                            SubEstado.Content = $"Firma erronea, descargando {mod.Nombre} de nuevo";
-                            logger.Warn($"La replica de {f} en el equipo no tiene la misma firma que en el servidor");
-                            logger.Warn($"El fichero {f} se va a descargar otra vez");
-
-                            // Si no son iguales, descargamos
-
-                            if (!await DownloadFileAsync(f, filename))
+                            if (file_hash != mod.Firma)
                             {
-                                nretries++;
-                                SubEstado.Content = $"Error en la descarga, descargando {mod.Nombre} de nuevo {nretries}/3";
+                                actualizaSubEstado($"Firma erronea, descargando {mod.Nombre} de nuevo");
 
-                                logger.Error($"Error al descargar {mod.Nombre}");
-                            }
+                                logger.Warn($"La replica de {f} en el equipo no tiene la misma firma que en el servidor");
+                                logger.Warn($"El fichero {f} se va a descargar otra vez");
 
-                            if (nretries == 3)
-                            {
-                                SubEstado.Content = $"Imposible descargar {mod.Nombre}. Se procede con el siguiente";
+                                // Si no son iguales, descargamos
 
-                                logger.Error($"Ha habido un problema al descargar {mod.Nombre}, pero se puede continuar");
+                                if (!await DownloadFileAsync(f, filename))
+                                {
+                                    nretries++;
+
+                                    actualizaSubEstado($"Error en la descarga, descargando {mod.Nombre} de nuevo {nretries}/3");
+
+                                    logger.Error($"Error al descargar {mod.Nombre}");
+                                }
+
+                                if (nretries == 3)
+                                {
+                                    actualizaSubEstado($"Imposible descargar {mod.Nombre}. Se procede con el siguiente");
+
+                                    logger.Error($"Ha habido un problema al descargar {mod.Nombre}, pero se puede continuar");
+                                    canContinue = true;
+
+                                    globalRetries++;
+                                }
+
                                 canContinue = true;
-
-                                globalRetries++;
                             }
-
-                            canContinue = true;
-                        }
-                        else
-                        {
-                            canContinue = true;
+                            else
+                            {
+                                canContinue = true;
+                            }
                         }
                     }
                 }
             }
+
+
 
             return true;
 
@@ -1324,6 +1562,56 @@ namespace ActualizaBDD
             {
                 lstMods.ItemsSource = r.Mods;
             }
-        }        
+        }
+
+        private async void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            logger.Info("Iniciando proceso de actualizacion NG");
+            apagar_botones();
+            Estado.Content = "Actualizando Mods";
+
+            int count = 0;
+
+            synchronizationContext = SynchronizationContext.Current;
+
+            foreach (RepositoryProxy proxy in repositories.RepositoryProxyList)
+            {
+                count++;
+
+                //lblAll.Visibility = Visibility.Visible;
+                //lblAll.Content = $"Procesando Repositorio {proxy.Nombre} ({count}/{repositories.RepositoryProxyList.Count})";
+                
+                string carpeta_juego = "";
+                string varma = radArma3.IsChecked == true ? "3" : "2";
+
+
+                if (radDefaultFolder.IsChecked.Value)
+                {
+                    carpeta_juego = tb_carpeta_arma3.Text;
+                }
+                else
+                {
+                    carpeta_juego = txtUserDefined.Text + @"/" + proxy.Nombre;
+                }
+
+                if (!Directory.Exists(carpeta_juego))
+                {
+                    Directory.CreateDirectory(carpeta_juego);
+                }
+
+
+                
+                ProcessUpdate(db_name, proxy, carpeta_juego).ContinueWith((result) =>
+                {
+
+                    resetEstado("Terminado");
+
+                });
+
+                
+            }
+            
+            //lblAll.Visibility = Visibility.Hidden;
+        }
     }
 }

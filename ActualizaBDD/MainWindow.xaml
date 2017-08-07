@@ -77,13 +77,13 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Addons" IsEnabled="True">
-                <Grid Margin="12,10,0,0" Height="266" VerticalAlignment="Top" HorizontalAlignment="Left" Width="687" >
+                <Grid Margin="12,10,0,0" Height="360" VerticalAlignment="Top" HorizontalAlignment="Left" Width="687" >
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <ListView x:Name="lstRepositorios" ItemsSource="{Binding RepositoryProxy}" IsSynchronizedWithCurrentItem="true" HorizontalAlignment="Left" Height="286" Margin="10,30,0,-50" VerticalAlignment="Top" Width="363" Grid.Column="0" Grid.ColumnSpan="2" SelectionChanged="lstRepositorios_SelectionChanged">
+                    <ListView x:Name="lstRepositorios" ItemsSource="{Binding RepositoryProxy}" IsSynchronizedWithCurrentItem="true" HorizontalAlignment="Left" Height="262" Margin="10,54,0,-50" VerticalAlignment="Top" Width="363" Grid.Column="0" Grid.ColumnSpan="2" SelectionChanged="lstRepositorios_SelectionChanged">
                         <ListView.Resources>
                             <Style TargetType="{x:Type ListViewItem}">
                                 <Style.Triggers>
@@ -142,7 +142,7 @@
                         </ListView.ItemTemplate>
                     </ListView>
 
-                    <ListView x:Name="lstMods" ItemsSource="{Binding RepositoryProxy.Mods}" IsSynchronizedWithCurrentItem="true" HorizontalAlignment="Left" Height="286" Margin="78,30,0,-50" VerticalAlignment="Top" Width="309" Grid.Column="1">
+                    <ListView x:Name="lstMods" ItemsSource="{Binding RepositoryProxy.Mods}" IsSynchronizedWithCurrentItem="true" HorizontalAlignment="Left" Height="262" Margin="78,54,0,-50" VerticalAlignment="Top" Width="309" Grid.Column="1">
                         <ListView.Resources>
                             <Style TargetType="{x:Type ListViewItem}">
                                 <Style.Triggers>
@@ -174,6 +174,8 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
+                    <Button Name="UpdateAllRepos" Content="Actualizar Todo" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="136" Height="27" Click="Button_Click_2"/>
+                    <Label x:Name="lblAll" Content="Nada" HorizontalAlignment="Left" Margin="180,10,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="363" FontSize="16" FontWeight="Bold" Visibility="Hidden"/>
                 </Grid>
             </TabItem>
 
@@ -318,8 +320,8 @@
                 </ItemsPanelTemplate>
             </StatusBar.ItemsPanel>
 
-            <StatusBarItem Name="Estado" Grid.Column="0" Content="Detenido" Height="34" VerticalAlignment="Top" Width="121" />
-            <StatusBarItem Name="SubEstado" Grid.Column="1" Content="" Height="32" VerticalAlignment="Top" Margin="4,0,-93,0" HorizontalAlignment="Left" Width="349" />
+            <StatusBarItem Name="Estado" Grid.Column="0" Content="Detenido" Height="34" VerticalAlignment="Top" Margin="0,0,-41,0" />
+            <StatusBarItem Name="SubEstado" Grid.Column="1" Content="" Height="32" VerticalAlignment="Top" Margin="46,0,-93,0" HorizontalAlignment="Left" Width="307" />
             <StatusBarItem Height="34" VerticalAlignment="Top" Margin="477,0,-576,0">
                 <Grid>
                     <ProgressBar x:Name="progreso" Width="212" Height="24" />

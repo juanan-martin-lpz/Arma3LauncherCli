@@ -60,7 +60,7 @@ namespace ServerManagementClient
         {
             var totalBytesRead = 0L;
             var readCount = 0L;
-            var buffer = new byte[8192];
+            var buffer = new byte[536870912];
             var isMoreToRead = true;
 
             using (var fileStream = new FileStream(_destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))

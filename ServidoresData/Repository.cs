@@ -694,7 +694,7 @@ namespace ServidoresData
                         }
                     }
                 }
-
+                
                 CatalogoCompletedEventArgs c = new CatalogoCompletedEventArgs(null, false, null);
                 c.Total = tfiles;
                 c.NewFiles = tnew;
@@ -702,6 +702,14 @@ namespace ServidoresData
 
                 OnCreateRepositoryCompleted(c);
             }
+
+            
+            if (File.Exists(targetdir.FullName + @"\ficheros.json"))
+            {
+                File.Delete(targetdir.FullName + @"\ficheros.json");
+            }
+
+            File.WriteAllText(targetdir.FullName + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));                
         }
 
 
@@ -967,17 +975,18 @@ namespace ServidoresData
             foreach(DBData d in ficheros)
             {
                 DirectoryInfo di = new DirectoryInfo(targetdir.FullName + d.Ruta);
-                DirectoryInfo dipre = new DirectoryInfo(targetdir.FullName + d.Ruta + @"\PreInstall");
-                DirectoryInfo dipost = new DirectoryInfo(targetdir.FullName + d.Ruta + @"\PostInstall");
+                //DirectoryInfo dipre = new DirectoryInfo(targetdir.FullName + d.Ruta + @"\PreInstall");
+                //DirectoryInfo dipost = new DirectoryInfo(targetdir.FullName + d.Ruta + @"\PostInstall");
 
                 if (!di.Exists)
                 {
                     di.Create();
 
-                    dipre.Create();
-                    dipost.Create();
+                    //dipre.Create();
+                    //dipost.Create();
                 }
 
+                /*
                 if (!dipre.Exists)
                 {
                     dipre.Create();
@@ -987,6 +996,7 @@ namespace ServidoresData
                 {
                     dipost.Create();
                 }
+                */
 
                 FileInfo fi = new FileInfo(basedir.FullName + d.Ruta + @"\" +  d.Nombre);
 
@@ -1001,7 +1011,16 @@ namespace ServidoresData
 
                 pr.Report(pm);
 
-                fi.CopyTo(Path.Combine(di.FullName, d.Nombre), true);
+                try
+                {
+                    fi.CopyTo(Path.Combine(di.FullName, d.Nombre), true);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error("====================================================================================================================");
+                    logger.Error($"Error al copiar el archivo ({di.FullName}) - {ex.Message}");
+                    logger.Error("====================================================================================================================");
+                }
             }
         }
 
