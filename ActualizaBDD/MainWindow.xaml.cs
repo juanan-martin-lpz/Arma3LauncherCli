@@ -472,7 +472,7 @@ namespace ActualizaBDD
 
                                 actualizaSubEstado($"Calculando firma para {data.Nombre}");
 
-                                data.Firma = await compute_hash.ComputeHashAsync(fichero.FullName);
+                                data.Firma = compute_hash.ComputeHash(fichero.FullName);
                                 data.Mod = m.Nombre;
                                 data.Tamano = fichero.Length;
 
@@ -1095,29 +1095,57 @@ namespace ActualizaBDD
 
         private void actualizaEstado(string estado)
         {
+            this.Dispatcher.Invoke(new System.Action<string>((e) => {
+                Estado.Content = e;
+                Estado.Refresh();
+
+            }), estado);
+
+            /*
             synchronizationContext.Send(new SendOrPostCallback(e =>
             {
                 Estado.Content = e;
                 Estado.Refresh();
                 
             }),estado);
+            */
         }
 
         private void actualizaSubEstado(string estado)
         {
-            
+            this.Dispatcher.Invoke(new System.Action<string>((e) => {
+                SubEstado.Content = e;
+                SubEstado.Refresh();
+
+            }), estado);
+
+            /*
             synchronizationContext.Send(new SendOrPostCallback(e =>
             {
                 SubEstado.Content = e;
                 SubEstado.Refresh();
                 
             }), estado);
-            
+            */
         }
 
         private void resetEstado(string estado)
         {
 
+            this.Dispatcher.Invoke(new System.Action<string>((e) => {
+                Estado.Content = e;
+                Estado.Refresh();
+                SubEstado.Content = "";
+                SubEstado.Refresh();
+                progreso.Value = 0;
+                progreso.Refresh();
+
+                lstRepositorios.IsEnabled = !lstRepositorios.IsEnabled;
+                UpdateAllRepos.IsEnabled = !UpdateAllRepos.IsEnabled;
+
+            }),estado);
+
+            /*
             synchronizationContext.Send(new SendOrPostCallback(e =>
             {
                 Estado.Content = e;
@@ -1131,20 +1159,32 @@ namespace ActualizaBDD
                 UpdateAllRepos.IsEnabled = !UpdateAllRepos.IsEnabled;
 
             }), estado);
+            */
 
         }
+
+        private string GetRelativePath(string path, string root, bool includeLeadingSlash = true )
+        {
+            string relative = path.Replace(root, "");
+
+            if (! includeLeadingSlash)
+            {
+                relative = relative.TrimStart('\\');
+            }
+
+            return relative;
+        }
+
         private async Task<bool> ProcessUpdate(string db_name, RepositoryProxy p, string targetFolder)
         {
             resetEstado("Iniciando...");
 
             // Descargamos ficheros.json
-            
+
             string ficherosjson = $"{webrepository}/{p.Nombre}/ficheros.json";
             string ficherosjsontarget = $"{bay.ToDirectoryInfo().FullName}\\{bay.GetDirectoryForRepo(p.Nombre)}\\ficheros.json";
 
-            //string ficherosjsontarget = @"C:\Qt\ficheros.json";
-
-            if ( ! await DownloadFileAsync(ficherosjson, ficherosjsontarget))
+            if (!await DownloadFileAsync(ficherosjson, ficherosjsontarget))
             {
                 logger.Error($"Error al descargar {ficherosjson}");
                 return false;
@@ -1157,6 +1197,8 @@ namespace ActualizaBDD
 
             mods = JsonConvert.DeserializeObject<List<ServerManagementClient.Models.ModViewModel>>(content);
 
+                
+
             IFileHash compute_hash = new FileHashXXHash();
 
             int globalRetries = 0;
@@ -1165,7 +1207,7 @@ namespace ActualizaBDD
             foreach (ServerManagementClient.Models.ModViewModel mod in mods)
             {
 
-                
+
                 if (globalRetries == 5)
                 {
                     logger.Error($"Parece que existen problemas para descargar algunos archivos. Notifique al administrador");
@@ -1182,7 +1224,7 @@ namespace ActualizaBDD
                 string folder = $"{targetFolder}\\{mod.Ruta}";
 
                 string filename = $"{folder}\\{mod.Nombre}";
-                
+
                 if (!Directory.Exists(folder))
                 {
                     Directory.CreateDirectory(folder);
@@ -1192,8 +1234,10 @@ namespace ActualizaBDD
                 {
                     // check signature
                     actualizaSubEstado($"Chequeando {filename}");
-                    
-                    string file_hash = await compute_hash.ComputeHashAsync(filename);
+
+                    string file_hash = compute_hash.ComputeHash(filename);
+
+                    actualizaSubEstado($"Chequeado...");
 
                     int nretries = 1;
                     bool canContinue = false;
@@ -1216,13 +1260,13 @@ namespace ActualizaBDD
                                 nretries++;
                                 actualizaSubEstado($"Error en la descarga, descargando {mod.Nombre} de nuevo {nretries}/3");
 
-                                logger.Error($"Error al descargar {mod.Nombre}");                                
+                                logger.Error($"Error al descargar {mod.Nombre}");
                             }
 
                             if (nretries == 3)
                             {
                                 actualizaSubEstado($"Imposible descargar {mod.Nombre}. Se procede con el siguiente");
-                                
+
                                 logger.Error($"Ha habido un problema al descargar {mod.Nombre}, pero se puede continuar");
                                 canContinue = true;
 
@@ -1240,7 +1284,7 @@ namespace ActualizaBDD
                     }
                 }
                 else
-                {        
+                {
                     string f = $"{webrepository}/{p.Nombre}/{mod.Ruta}/{mod.Nombre}";
 
                     actualizaSubEstado($"Descargando {mod.Nombre}");
@@ -1302,9 +1346,24 @@ namespace ActualizaBDD
                         }
                     }
                 }
+
+                this.Dispatcher.Invoke(new System.Action(() => this.Refresh()));
             }
 
+            var dirs = Directory.EnumerateDirectories(targetFolder);
 
+            actualizaEstado("Eliminando");
+
+            foreach(string dir in dirs)
+            {
+                string nombre = GetRelativePath(dir, targetFolder, false);
+
+                if (! mods.Exists(m => m.Mod == nombre ))
+                {
+                    actualizaSubEstado($"Se va a eliminar {nombre}");
+                    Directory.Delete(dir, true);
+                }
+            }
 
             return true;
 
