@@ -52,6 +52,8 @@ namespace ServerManagerCore
 
             services.AddTransient<ApplicationContextDbInitializer>();
 
+            services.AddAuthentication();
+
             services.AddMvc();
 
             // Add application services.
@@ -60,7 +62,7 @@ namespace ServerManagerCore
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory,ApplicationContextDbInitializer dbInit)
+        public async void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory,ApplicationContextDbInitializer dbInit)
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
@@ -80,6 +82,7 @@ namespace ServerManagerCore
 
             app.UseIdentity();
             app.UseOwin();
+
             // Add external authentication middleware below. To configure them please see https://go.microsoft.com/fwlink/?LinkID=532715
 
             app.UseMvc(routes =>
@@ -89,7 +92,7 @@ namespace ServerManagerCore
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
 
-            dbInit.Seed();
+            await dbInit.Seed();
         }
     }
 }

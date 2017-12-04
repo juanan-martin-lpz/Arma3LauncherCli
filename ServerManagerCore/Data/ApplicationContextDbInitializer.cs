@@ -41,7 +41,7 @@ namespace ServerManagerCore.Data
 
             string roleName = "Administradores";
             string userName = "Admin";
-            string password = "secret";
+            string password = "Defender100";
             string email = "admin@example.com";
 
             ApplicationRole adminrole = _context.Roles.FirstOrDefault<ApplicationRole>(a => a.Name == roleName);
@@ -68,6 +68,11 @@ namespace ServerManagerCore.Data
                     admin = new ApplicationUser { UserName = userName, Email = email };
                     string pwd = phash.HashPassword(admin, password);
 
+                    admin.EmailConfirmed = true;
+                    admin.LockoutEnabled = false;
+                    admin.NormalizedEmail = "ADMIN@EXAMPLE.COM";
+                    admin.NormalizedUserName = "ADMIN";
+
                     IdentityUserRole<int> userrole = new IdentityUserRole<int>();
                     userrole.RoleId = adminrole.Id;
 
@@ -78,6 +83,9 @@ namespace ServerManagerCore.Data
                     _context.Users.Add(admin);
 
                 }
+
+                await _userManager.UpdateSecurityStampAsync(admin);
+
 
                 await _context.SaveChangesAsync();
             }

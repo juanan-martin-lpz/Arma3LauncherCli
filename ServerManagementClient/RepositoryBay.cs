@@ -7,7 +7,7 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.IO;
 
-namespace ServidoresData
+namespace ServerManagementClient
 {
     public class RepositoryBay : INotifyPropertyChanged
     {

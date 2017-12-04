@@ -2,10 +2,10 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ActualizaBDD"
-        Title="12BDI Lanzador" Height="496" Width="731" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded_1" ResizeMode="CanMinimize" Closing="Window_Closing">
+        Title="12BDI Lanzador" Height="496" Width="731" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded_1" ResizeMode="CanMinimize">
 
     <Grid Width="713" Margin="6,10,6,3">
-        <TabControl IsSynchronizedWithCurrentItem="True" Height="407" VerticalAlignment="Top" >
+        <TabControl IsSynchronizedWithCurrentItem="True" Height="407" VerticalAlignment="Top" Margin="-10,0,10,0" >
             <TabItem Header="Lanzador" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" Width="76" Margin="-2,0,-20,0">
                 <Grid Margin="0,-1">
                     <Grid.ColumnDefinitions>
@@ -132,11 +132,6 @@
                                             <Image Source="Resources/Images/Buttons/hd.ico"/>
                                         </DockPanel>
                                     </Button>
-                                    <Button Click="DetallesActualizacion_Click" IsEnabled="{Binding Downloading}" Grid.Column="4">
-                                        <DockPanel>
-                                            <Image Source="Resources/Images/Buttons/note.ico"/>
-                                        </DockPanel>
-                                    </Button>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
@@ -236,13 +231,11 @@
             <TabItem Header="Administración"  x:Name="solapa_administracion" Height="22" VerticalAlignment="Top">
                 <Grid Margin="12,10,0,0" Height="266" VerticalAlignment="Top" HorizontalAlignment="Left" Width="687">
                     <Label Content="NO USAR" Height="28" HorizontalAlignment="Left" Margin="273,14,0,0" x:Name="label3" VerticalAlignment="Top" />
-                    <Label Content="Carpeta destino Repositorio" Height="28" HorizontalAlignment="Left" Margin="25,63,0,0" x:Name="label5" VerticalAlignment="Top" />
-                    <TextBox Height="23" HorizontalAlignment="Left" Margin="184,63,0,0" x:Name="tb_carpeta_repositorio" Text="C:\JUEGOS\Servidores\12bdi_launcher" VerticalAlignment="Top" Width="427" />
                     <Button Content="Crear repositorio arma2" Height="23" HorizontalAlignment="Left" Margin="184,151,0,0" x:Name="btn_crear_repositorio_a2" VerticalAlignment="Top" Width="208" Visibility="Hidden" />
-                    <Button Content="Crear Repositorio" Height="23" HorizontalAlignment="Left" Margin="184,109,0,0" x:Name="btn_crear_repositorio_a3" VerticalAlignment="Top" Width="208" Click="btn_crear_repositorio_a3_Click" />
+                    <Button Content="Crear Repositorio" Height="23" HorizontalAlignment="Left" Margin="184,57,0,0" x:Name="btn_crear_repositorio_a3" VerticalAlignment="Top" Width="208" Click="btn_crear_repositorio_a3_Click" />
                     <Label Content="Carpeta base Repositorio:" Height="28" HorizontalAlignment="Left" Margin="25,15,0,0" x:Name="label11" VerticalAlignment="Top" />
-                    <TextBox Height="23" HorizontalAlignment="Left" Margin="184,18,0,0" x:Name="tb_carpeta_base_arma3" Text="C:\JUEGOS\Servidores\arma_3_test" VerticalAlignment="Top" Width="427" />
-                    <Button Content="Generar Lista de Mods" Height="23" HorizontalAlignment="Left" Margin="403,109,0,0" x:Name="btn_gen_repositorio_a2" VerticalAlignment="Top" Width="208" Click="btn_gen_repositorio_a2_Click" />
+                    <TextBox Height="23" HorizontalAlignment="Left" Margin="184,18,0,0" x:Name="tb_carpeta_base_arma3" Text="" VerticalAlignment="Top" Width="427" />
+                    <Button Content="Generar Lista de Mods" Height="23" HorizontalAlignment="Left" Margin="403,57,0,0" x:Name="btn_gen_repositorio_a2" VerticalAlignment="Top" Width="208" Click="btn_gen_repositorio_a2_Click" />
 
                     <StatusBar HorizontalAlignment="Left" Height="34" Margin="-14,334,-6,-102" VerticalAlignment="Top" Width="707" DockPanel.Dock="Bottom">
                         <StatusBar.ItemsPanel>

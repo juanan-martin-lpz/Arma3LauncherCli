@@ -5,13 +5,12 @@ using System.Windows.Forms;
 using ActualizaBDD.Properties;
 using System.IO;
 using System.ComponentModel;
-using Microsoft.VisualBasic;
+//using Microsoft.VisualBasic;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Collections.ObjectModel;
-using ServidoresData;
-using System.Text.RegularExpressions;
+//using System.Text.RegularExpressions;
 using System.Threading;
 using NLog;
 using NLog.Targets;
@@ -22,32 +21,7 @@ using ServerManagementClient;
 
 /*************************************************************************************************************************************************
  * 
- * Version 2.1.1 Development -> 2.1.2 Stable
- *      NUEVO
- *          Se sustituye el treeview de los Addons por dos ListView sincronizados
- *          Se filtra la lista de descargas para mostrar las descargas en progreso y las no iniciadas
- *          No se deshabilita el boton de actualizar addons permitiendo clicarle de nuevo 
- *          Borrado completo de addons no usados si la configuracion es Definida por el Usuario     
- *      
- *      BUGS SOLUCIONADOS
- *          Problema con los timestamps que no daba como actualizado un repositorio correcto (No comprobado)
- *          Sincronizacion de los eventos al actualizar un repositorio
- *          Ahora se eliminan los directorios de los mods no usados para el repo
  * 
- * Version 2.1.3 Development -> 2.1.4 Stable
- *      NUEVO
- *          Reimplementacion Lanzador Xpress       
- *          Comprobacion de un Addon contra la vista del servidor
- *          Actualizacion individual e imperativa de Addons a traves de la lista de addons por repositorio
- *          Ejecucion scripts pre/post actualizacion
- *               
- *      BUGS SOLUCIONADOS
- * 
- * 
- * Version 2.1.5 Development -> 2.1.6 Stable
- *      NUEVO
- *          Descarga de archivos necesarios a traves de websocket y aplicacion de servidor
- *          Configuracion de servidores en formato JSON
  *              
  *      BUGS SOLUCIONADOS
  *      
@@ -68,14 +42,13 @@ namespace ActualizaBDD
         internal string servidor_12bdi = "188.165.254.137";
         private System.Windows.Media.Brush btnBrush;
 
-        ServidoresData.RepositorySource source;
+       RepositorySource source;
 
         ServidoresList servers;
         List<ModView> mods;
 
         private string webrepository = "http://188.165.254.137/WebRepo";
 
-        WebDownload wbm;
         RepositoryBay bay;
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -83,18 +56,13 @@ namespace ActualizaBDD
 
         Diagnosticos diag;
 
-        Repository cliente;
-        Repositories rs;
-
+        
         string db_name;
         Servidor serv;
 
         RepositoryProxy proxy;
 
-        Repository re;
-
-        DownloadProgress dp;
-
+        
         Repositories repositories;
 
         public MainWindow()
@@ -121,7 +89,7 @@ namespace ActualizaBDD
 
 
 
-        private void Window_Loaded_1(object sender, RoutedEventArgs e)
+        private async void Window_Loaded_1(object sender, RoutedEventArgs e)
         {
             // Versión
             this.Title = "12BDI Lanzador V. ";
@@ -180,13 +148,14 @@ namespace ActualizaBDD
 
             bay = new RepositoryBay();
             source = new RepositorySource(webrepository, bay, pw_contraseña_servidores.Password);
-            source.Connect();
+            await source.Connect();
 
             logger.Info("Conectado al repositorio");
 
 
             repositories = new Repositories();
 
+            await repositories.DownloadRepositoriesJson();
 
             if ((repositories != null) && (repositories.RepositoryProxyList != null))
             {
@@ -198,16 +167,23 @@ namespace ActualizaBDD
 
             // Aqui habria que avisar de que se esta descargando el archivo
 
-            // La idea es hacerlo en repositorysource
-            wbm = new WebDownload();
-            wbm.DownloadFileCompleted += new AsyncCompletedEventHandler(ModlistCompleted);
-            wbm.DownloadFileAsync(webrepository, "/modlist.txt", fpath);
+            await DownloadFileAsync($"{webrepository}/modlist.txt", fpath);
 
+            logger.Info("modlist.txt descargado correctamente");
+
+            readModList();
+
+            logger.Info("modlist.txt cargado correctamente");
+
+            radArma3.IsChecked = true;
+
+            lstServidores.ItemsSource = source.Servidores;
         }
 
         //private void ModlistCompleted(object sender, AsyncCompletedEventArgs e)
 
 
+        /* OBSOLETO
         private void ModlistCompleted(object sender, EventArgs e)
         {
             logger.Info("modlist.txt descargado correctamente");
@@ -219,6 +195,7 @@ namespace ActualizaBDD
             radArma3.IsChecked = true;
             lstServidores.ItemsSource = from s in source.Servidores where s.Arma == "3" select s;
         }
+        */
 
         private void readModList()
         {
@@ -257,6 +234,7 @@ namespace ActualizaBDD
         private void btn_guardar_configuraciion_Click(object sender, RoutedEventArgs e)
         {
             Configuracion.guardar_configuracion(this);
+            Configuracion.cargar_configuracion(this);
         }
 
         // Restablecemos la configuración por defecto.
@@ -437,7 +415,7 @@ namespace ActualizaBDD
 
                     actualizaProgreso((modcurrent * 100) / modcount);
 
-                    Mod m = new Mod(fol.FullName, null);
+                    Mod m = new Mod(fol.FullName);
                     m.Nombre = Path.GetFileName(fol.Name);
                     m.RelativePath = fol.FullName.Replace(Path.GetFullPath(basedir.FullName), "");
 
@@ -529,7 +507,7 @@ namespace ActualizaBDD
 
         private void btn_crear_repositorio_a3_Click(object sender, RoutedEventArgs e)
         {
-                        synchronizationContext = SynchronizationContext.Current;
+            synchronizationContext = SynchronizationContext.Current;
 
 
             GenerateRepositories().ContinueWith((result) =>
@@ -630,6 +608,7 @@ namespace ActualizaBDD
             #endregion
         }
 
+        /* OBSOLETO
         private void GenerateRepoCompleted(object sender, Repository.CatalogoCompletedEventArgs e)
         {
             Progress<PublishModsProgress> pprg = new Progress<PublishModsProgress>();
@@ -662,6 +641,7 @@ namespace ActualizaBDD
             }));
 
         }
+        */
 
         private void Test_Microphone_Click(object sender, RoutedEventArgs e)
         {
@@ -763,30 +743,30 @@ namespace ActualizaBDD
         {
 
             string carpeta_entrada = tb_carpeta_base_arma3.Text;
-            string carpeta_salida = tb_carpeta_repositorio.Text;
-
+            
             List<RepositoryProxy> reposl = new List<RepositoryProxy>();
 
             string[] dirs = Directory.GetDirectories(carpeta_entrada);
 
-            DirectoryInfo wrepo = new DirectoryInfo(carpeta_salida);
+            DirectoryInfo wrepo = new DirectoryInfo(carpeta_entrada);
 
             List<string> lines = new List<string>();
-            FileInfo modlist = new FileInfo(carpeta_salida + @"\modlist.txt");
+            FileInfo modlist = new FileInfo(carpeta_entrada + @"\modlist.txt");
 
             if (modlist.Exists) { modlist.Delete(); }
 
             foreach (DirectoryInfo i in wrepo.GetDirectories())
             {
 
-                FileInfo c = new FileInfo(carpeta_salida + @"\" + wrepo.Name + @"\timestamp.txt");
+                /*
+                FileInfo c = new FileInfo(carpeta_entrada + @"\" + wrepo.Name + @"\timestamp.txt");
 
                 if (c.Exists)
                 {
                     c.Delete();
                 }
 
-                StreamWriter canario = new StreamWriter(carpeta_salida + @"\" + i.Name + @"\timestamp.txt");
+                StreamWriter canario = new StreamWriter(carpeta_entrada + @"\" + i.Name + @"\timestamp.txt");
 
                 //File.Open(carpeta_salida + @"\" + wrepo.Name + @"\timestamp.txt",FileMode.OpenOrCreate);
 
@@ -795,12 +775,14 @@ namespace ActualizaBDD
                 canario.WriteLine(fecha);
 
                 canario.Close();
+                */
 
                 RepositoryProxy rr = new RepositoryProxy() { Nombre = i.Name };
                 generateModFile(lines, "3", i, rr);
+
                 reposl.Add(rr);
 
-                File.WriteAllText(carpeta_salida + @"\repositories.json", JsonConvert.SerializeObject(reposl));
+                //File.WriteAllText(carpeta_entrada + @"\repositories.json", JsonConvert.SerializeObject(reposl));
 
                 System.IO.File.WriteAllLines(modlist.FullName, lines);
 
@@ -941,7 +923,7 @@ namespace ActualizaBDD
             }
 
             synchronizationContext = SynchronizationContext.Current;
-
+            
             // Core action
             //lstRepositorios.IsEnabled = false;
             //UpdateAllRepos.IsEnabled = false;
@@ -1085,48 +1067,59 @@ namespace ActualizaBDD
 
         private void actualizaProgreso(long prog)
         {
+            synchronizationContext.OperationStarted();
+
             synchronizationContext.Send(new SendOrPostCallback(e =>
             {
                 progreso.Value = prog ;
                 progreso.Refresh();
 
             }), prog);
+
+            synchronizationContext.OperationCompleted();
         }
 
         private void actualizaEstado(string estado)
         {
+            /*
             this.Dispatcher.Invoke(new System.Action<string>((e) => {
                 Estado.Content = e;
                 Estado.Refresh();
 
             }), estado);
+            */
+            synchronizationContext.OperationStarted();
 
-            /*
             synchronizationContext.Send(new SendOrPostCallback(e =>
             {
                 Estado.Content = e;
                 Estado.Refresh();
                 
             }),estado);
-            */
+
+            synchronizationContext.OperationCompleted();
         }
 
         private void actualizaSubEstado(string estado)
         {
+            /*
             this.Dispatcher.Invoke(new System.Action<string>((e) => {
                 SubEstado.Content = e;
-                SubEstado.Refresh();
+                SubEstado.Refresh();                
 
             }), estado);
+            */
 
-            /*
+            synchronizationContext.OperationStarted();
+
             synchronizationContext.Send(new SendOrPostCallback(e =>
             {
                 SubEstado.Content = e;
                 SubEstado.Refresh();
                 
             }), estado);
-            */
+
+            synchronizationContext.OperationCompleted();
         }
 
         private void resetEstado(string estado)
@@ -1179,6 +1172,7 @@ namespace ActualizaBDD
         {
             resetEstado("Iniciando...");
 
+
             // Descargamos ficheros.json
 
             string ficherosjson = $"{webrepository}/{p.Nombre}/ficheros.json";
@@ -1195,6 +1189,7 @@ namespace ActualizaBDD
 
             List<ServerManagementClient.Models.ModViewModel> mods = new List<ServerManagementClient.Models.ModViewModel>();
 
+            
             mods = JsonConvert.DeserializeObject<List<ServerManagementClient.Models.ModViewModel>>(content);
 
                 
@@ -1207,6 +1202,7 @@ namespace ActualizaBDD
             foreach (ServerManagementClient.Models.ModViewModel mod in mods)
             {
 
+                synchronizationContext.Send(new SendOrPostCallback(e => { this.Refresh(); }), "");
 
                 if (globalRetries == 5)
                 {
@@ -1309,6 +1305,8 @@ namespace ActualizaBDD
 
                         while (!canContinue)
                         {
+                            synchronizationContext.Send(new SendOrPostCallback(e => { this.Refresh(); }), "");
+
                             if (file_hash != mod.Firma)
                             {
                                 actualizaSubEstado($"Firma erronea, descargando {mod.Nombre} de nuevo");
@@ -1347,22 +1345,69 @@ namespace ActualizaBDD
                     }
                 }
 
-                this.Dispatcher.Invoke(new System.Action(() => this.Refresh()));
+                //this.Dispatcher.Invoke(new System.Action(() => this.Refresh()));
             }
 
-            var dirs = Directory.EnumerateDirectories(targetFolder);
 
-            actualizaEstado("Eliminando");
+            // Proceso de eliminacion:
+            // 
+            //      Generar lista en cliente
+            //      Comparar con los elementos de servidor
+            //      
 
-            foreach(string dir in dirs)
+            if (radUserDefinedFolder.IsChecked == true)
             {
-                string nombre = GetRelativePath(dir, targetFolder, false);
 
-                if (! mods.Exists(m => m.Mod == nombre ))
+                var dirs = Directory.EnumerateDirectories(targetFolder);
+
+                actualizaEstado("Eliminando");
+
+                foreach (string dir in dirs)
                 {
-                    actualizaSubEstado($"Se va a eliminar {nombre}");
-                    Directory.Delete(dir, true);
+                    string nombre = GetRelativePath(dir, targetFolder, false);
+
+                    if (nombre.StartsWith("@"))
+                    {
+                        if (!mods.Exists(m => m.Mod == nombre))
+                        {
+                            actualizaSubEstado($"Se va a eliminar {nombre}");
+                            Directory.Delete(dir, true);
+                        }
+                    }
+
+                    var files = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories);
+
+                    actualizaEstado("Eliminando archivos obsoletos");
+
+                    foreach (string file in files)
+                    {
+                        synchronizationContext.Send(new SendOrPostCallback(e => { this.Refresh(); }), "");
+
+                        if (!mods.Exists(m =>
+                        {
+
+                            string n = targetFolder + m.Ruta + @"\\" + m.Nombre;
+
+                            if (Path.GetFullPath(n) == Path.GetFullPath(file))
+                            {
+                                return true;
+                            }
+                            else
+                            {
+                                return false;
+                            }
+
+                        }))
+                        {
+                            actualizaSubEstado($"Se va a eliminar {file}");
+                            File.Delete(file);
+                        }
+
+                    }
+
+                    synchronizationContext.Send(new SendOrPostCallback(e => { this.Refresh(); }), "");
                 }
+
             }
 
             return true;
@@ -1397,6 +1442,8 @@ namespace ActualizaBDD
 
         }
 
+        /* OBSOLETO
+        // OBSOLETO
         private void tareasCompletadas(object sender, AsyncCompletedEventArgs e)
         {       
             logger.Info("Completado el proceso de Actualizacion de Addons");
@@ -1412,6 +1459,7 @@ namespace ActualizaBDD
             }));
         }
 
+        // OBSOLETO
         private void compareCompleted(object sender, Repository.CatalogoCompareCompletedEventArgs e)
         {
             this.Dispatcher.Invoke(new System.Action(() =>
@@ -1427,6 +1475,7 @@ namespace ActualizaBDD
 
         }
 
+        // OBSOLETO
         private void catalogcomplete(object sen, Repository.CatalogoCompletedEventArgs eve)
         {
             this.Dispatcher.Invoke(new System.Action(() =>
@@ -1445,7 +1494,8 @@ namespace ActualizaBDD
 
         }
 
-        
+
+        // OBSOLETO
         private void createRepoCompleted(object sen, Repository.CatalogoCompletedEventArgs eve)
         {
             this.Dispatcher.Invoke(new System.Action(() =>
@@ -1473,8 +1523,8 @@ namespace ActualizaBDD
             re.Publish(prg);
 
         }
-        
 
+        // OBSOLETO
         private void progresoPlan(object sender, Repository.PlanProgressEventArgs e)
         {
 
@@ -1487,6 +1537,7 @@ namespace ActualizaBDD
 
         }
 
+        // OBSOLETO
         public string PrettyFormat(TimeSpan span)
         {
 
@@ -1503,6 +1554,7 @@ namespace ActualizaBDD
 
         }
 
+        // OBSOLETO
         private void updateTasks(object sender, Repository.TaskProgressProgressChanged e)
         {
             try
@@ -1519,7 +1571,7 @@ namespace ActualizaBDD
                     SubEstado.Content = e.Message;
                     progreso.Value = e.ProgressPercentage;           
                 }));
-                */
+                
             }
             catch (Exception ex)
             {
@@ -1530,6 +1582,7 @@ namespace ActualizaBDD
         }
 
 
+        // OBSOLETO
         private void DetallesActualizacion_Click(object sender, RoutedEventArgs e)
         {
             if ((cliente != null) && (cliente.Downloading))
@@ -1539,6 +1592,7 @@ namespace ActualizaBDD
             }
 
         }
+        */
 
         private void radArma3_Checked(object sender, RoutedEventArgs e)
         {
@@ -1590,6 +1644,7 @@ namespace ActualizaBDD
             { }
         }
 
+        /* OBSOLETO
         private void Window_Closing(object sender, CancelEventArgs e)
         {
 
@@ -1612,7 +1667,11 @@ namespace ActualizaBDD
             }
             
         }
-
+        */
+        // Seleccion de Repositorios. List SelectionChanged
+        // Referencias
+        //      RepositoryProxy
+        //
         private void lstRepositorios_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             RepositoryProxy r = (RepositoryProxy) lstRepositorios.SelectedItem;
@@ -1623,6 +1682,11 @@ namespace ActualizaBDD
             }
         }
 
+
+        // Nuevo proceso de actualizacion. Button Handler
+        // Referencias
+        //      RepositoryProxy
+        //
         private async void Button_Click_2(object sender, RoutedEventArgs e)
         {
             logger.Info("Iniciando proceso de actualizacion NG");

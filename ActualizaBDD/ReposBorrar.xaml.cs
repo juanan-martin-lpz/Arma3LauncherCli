@@ -11,7 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using ServidoresData;
+using ServerManagementClient;
 
 namespace ActualizaBDD
 {
@@ -23,11 +23,12 @@ namespace ActualizaBDD
     {
         //List<Mod> elementos;
 
+        
         public ReposBorrar(List<ModView> items)
         {
             InitializeComponent();
 
-            lista.ItemsSource = items != null ? items : new List<ModView>();
+            //lista.ItemsSource = items != null ? items : new List<ModView>();
 
 
         }

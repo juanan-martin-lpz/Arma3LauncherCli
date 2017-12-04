@@ -24,13 +24,17 @@ namespace ServidoresData
         int bufferLength = 256 * 1024 * 1024; // 1MB
 
         long bytesRead = 0;
+#pragma warning disable CS0414 // El campo 'HttpDownload.megaBytesTotal' está asignado pero su valor nunca se usa
         long megaBytesTotal = 0;
+#pragma warning restore CS0414 // El campo 'HttpDownload.megaBytesTotal' está asignado pero su valor nunca se usa
         long percent;
         long bytesTotal = 0;
 
         long totalreaded;
 
+#pragma warning disable CS0169 // El campo 'HttpDownload.statusCode' nunca se usa
         string statusCode;
+#pragma warning restore CS0169 // El campo 'HttpDownload.statusCode' nunca se usa
 
         const int BUFFER_SIZE = 1024 * 1024;
         byte[] buffer;

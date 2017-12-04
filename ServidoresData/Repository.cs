@@ -14,9 +14,8 @@ using System.Data.HashFunction;
 using NLog;
 using NLog.Targets;
 using Newtonsoft.Json;
-using csscript;
-using MyDownloader.Core;
-using MyDownloader.Extension.Protocols;
+//using csscript;
+
 
 
 namespace ServidoresData
@@ -72,13 +71,17 @@ namespace ServidoresData
         List<CommandBase> TasksToDo;
         List<Task> commandList;
 
+#pragma warning disable CS0169 // El campo 'Repository.distinctMD5' nunca se usa
         List<DBData> distinctMD5;
+#pragma warning restore CS0169 // El campo 'Repository.distinctMD5' nunca se usa
 
         PlanProgressEventArgs pplan;
 
         List<CommandBase> currents = new List<CommandBase>();
 
+#pragma warning disable CS0414 // El campo 'Repository._downloading' está asignado pero su valor nunca se usa
         bool _downloading = false;
+#pragma warning restore CS0414 // El campo 'Repository._downloading' está asignado pero su valor nunca se usa
 
         List<DBData> modsInRepo;
         ObservableCollection<DBData> dcliente;
@@ -89,7 +92,6 @@ namespace ServidoresData
         
         double downloadprogress = 0;
 
-        DownloadManager dman;
         //SemaphoreSlim sem;
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -107,7 +109,9 @@ namespace ServidoresData
         public event UpgradeRepositoryProgressChangedEventHandler UpgradeRepositoryProgressChanged;
 
         public delegate void UpgradeRepositoryBeforeExecuteEventHandler(object sender, TaskProgressProgressChanged e);
+#pragma warning disable CS0067 // El evento 'Repository.UpgradeRepositoryBeforeExecute' nunca se usa
         public event UpgradeRepositoryBeforeExecuteEventHandler UpgradeRepositoryBeforeExecute;
+#pragma warning restore CS0067 // El evento 'Repository.UpgradeRepositoryBeforeExecute' nunca se usa
 
         public delegate void PlanProgressChangedEventHandler(object sender, PlanProgressEventArgs e);
         public event PlanProgressChangedEventHandler PlanProgressChanged;
@@ -128,8 +132,8 @@ namespace ServidoresData
 
             public TaskProgressProgressChanged(int progressPercentage, object userState) : base(progressPercentage, userState)
             {
-                Downloader dow = (Downloader)userState;
-                Left = dow.Left;
+                //Downloader dow = (Downloader)userState;
+                //Left = dow.Left;
             }
         }
 
@@ -609,7 +613,9 @@ namespace ServidoresData
             int tnew = 0;
             
             //DirectoryInfo rbay = Bay.GetDirectoryForRepo(Repo);
+#pragma warning disable CS0168 // La variable 'fi' se ha declarado pero nunca se usa
             FileInfo fi;
+#pragma warning restore CS0168 // La variable 'fi' se ha declarado pero nunca se usa
             //bool db_previa = false;
             DirectoryInfo di = new DirectoryInfo(target);
 
@@ -743,7 +749,9 @@ namespace ServidoresData
         public void CatalogFolderAsync(RepositoryBay Bay, string Repo, IProgress<CatalogModsProgress> progress = null)
         {
             int tfiles = 0;
+#pragma warning disable CS0219 // La variable 'tproc' está asignada pero su valor nunca se usa
             int tproc = 0;
+#pragma warning restore CS0219 // La variable 'tproc' está asignada pero su valor nunca se usa
             int tskip = 0;
             int tnew = 0;
 
@@ -1030,11 +1038,11 @@ namespace ServidoresData
             int tdsig = 0;
             int tnic = 0;
 
-            MyDownloader.Extension.Protocols.HttpFtpProtocolExtension _protocol = new HttpFtpProtocolExtension(new MyParms());
+            //MyDownloader.Extension.Protocols.HttpFtpProtocolExtension _protocol = new HttpFtpProtocolExtension(new MyParms());
 
             //ProtocolProviderFactory.RegisterProtocolHandler("http", typeof(MyDownloader.Extension.Protocols.HttpProtocolProvider));
 
-            dman = new DownloadManager();
+            //dman = new DownloadManager();
 
 
             Task t = new Task(() =>
@@ -1090,7 +1098,7 @@ namespace ServidoresData
                        dlist = new ObservableCollection<WebDownloadAction>();
                        List<DBData> toAdd = new List<DBData>();
 
-                       dman.OnBeginAddBatchDownloads();
+                       //dman.OnBeginAddBatchDownloads();
 
                        foreach (DBData r in notInCliente)
                        {
@@ -1108,11 +1116,11 @@ namespace ServidoresData
 
                                //queue.Add(url, trg);
 
-                               ResourceLocation rl = ResourceLocation.FromURL(url);
-                               Downloader dl = dman.Add(rl, new ResourceLocation[] { }, trg, 1, false);
+                               //ResourceLocation rl = ResourceLocation.FromURL(url);
+                               //Downloader dl = dman.Add(rl, new ResourceLocation[] { }, trg, 1, false);
 
-                               dl.StateChanged += new EventHandler(dlchanged);
-                               dl.SegmentStarted += new EventHandler<SegmentEventArgs>(segmentStarted);
+                               //dl.StateChanged += new EventHandler(dlchanged);
+                               //dl.SegmentStarted += new EventHandler<SegmentEventArgs>(segmentStarted);
 
 
                                //dcliente.Add(r);
@@ -1144,10 +1152,10 @@ namespace ServidoresData
                                string trg = basepath + @"\" + ruta + @"\" + nombre;
 
                                //queue.Add(url, trg);
-                               ResourceLocation rl = ResourceLocation.FromURL(url);
-                               Downloader dl = dman.Add(rl, new ResourceLocation[] { }, trg, 4, false);
+                               //ResourceLocation rl = ResourceLocation.FromURL(url);
+                               //Downloader dl = dman.Add(rl, new ResourceLocation[] { }, trg, 4, false);
 
-                               dl.StateChanged += new EventHandler(dlchanged);
+                               //dl.StateChanged += new EventHandler(dlchanged);
 
 
                                toAdd.Add(r);
@@ -1282,15 +1290,18 @@ namespace ServidoresData
             t.Start();
         }
 
+        /*
         private void segmentStarted(object sender, MyDownloader.Core.SegmentEventArgs e)
         {
-            Downloader d = (Downloader)e.Downloader;
+            //Downloader d = (Downloader)e.Downloader;
 
             OnUpgradeRepositoryProgressChanged(new TaskProgressProgressChanged((int)d.Progress, d));
         }
-        
+        */
+
         private void dlchanged(object sender, EventArgs e)
         {
+            /*
             Downloader d = (Downloader)sender;
 
            
@@ -1303,6 +1314,7 @@ namespace ServidoresData
             {
                 logger.Info("Finalizado {0}, {1} bytes descargados", d.ResourceLocation.URL, d.Transfered);
             }
+            */
 
         }
         private void deleteIfEmpty(string p)
@@ -1335,15 +1347,18 @@ namespace ServidoresData
             //queue.StartAsync();
 
 
-            dman.OnEndAddBatchDownloads();
+            //dman.OnEndAddBatchDownloads();
 
             sem = new SemaphoreSlim(6);
 
-            MyDownloader.Core.Settings.Default.MaxRetries = 2;
+            //MyDownloader.Core.Settings.Default.MaxRetries = 2;
 
+#pragma warning disable CS0219 // La variable 'current' está asignada pero su valor nunca se usa
             int current = 0;
-            int max = dman.Downloads.Count();
+#pragma warning restore CS0219 // La variable 'current' está asignada pero su valor nunca se usa
+            //int max = dman.Downloads.Count();
 
+            /*
             foreach (Downloader dl in dman.Downloads)
             {
                 sem.Wait();
@@ -1379,7 +1394,7 @@ namespace ServidoresData
             
 
             OnUpgradeRepositoryCompleted(new AsyncCompletedEventArgs(null, false, null));
-
+            */
         }
 
 

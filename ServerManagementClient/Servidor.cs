@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 
-namespace ServidoresData
+namespace ServerManagementClient
 {
 	public enum StatusInfo
 	{
@@ -19,9 +19,7 @@ namespace ServidoresData
     {
 
         string arma;
-#pragma warning disable CS0169 // El campo 'Servidor.fecha' nunca se usa
         DateTime fecha;
-#pragma warning restore CS0169 // El campo 'Servidor.fecha' nunca se usa
         string nombre;
         string puerto;
         string ip;
@@ -237,14 +235,6 @@ namespace ServidoresData
         	{
         		return status;
         	}
-        }
-        
-        public void Publish(Repository target)
-        {
-        	//target.CreateDB();
-
-            //target.Publish();
-        	
         }
         
         public Servidor Clone()

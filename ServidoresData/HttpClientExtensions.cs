@@ -27,7 +27,9 @@ namespace ServidoresData
             var bytesRead = 0;
             var megaBytesTotal = 0;
 
+#pragma warning disable CS0168 // La variable 'statusCode' se ha declarado pero nunca se usa
             string statusCode;
+#pragma warning restore CS0168 // La variable 'statusCode' se ha declarado pero nunca se usa
 
             Func<int, int, int> percent = (read, total) =>
             {

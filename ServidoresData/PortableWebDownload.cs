@@ -30,7 +30,9 @@ namespace ServidoresData
         private string _repo;
         private string _target;
 
+#pragma warning disable CS0414 // El campo 'PortableWebDownload.bufferLength' está asignado pero su valor nunca se usa
         int bufferLength = 1024 * 1024;
+#pragma warning restore CS0414 // El campo 'PortableWebDownload.bufferLength' está asignado pero su valor nunca se usa
 
         bool canDownload = true;
 
@@ -45,8 +47,12 @@ namespace ServidoresData
 
         public event AsyncCompletedEventHandler DownloadFileCompleted;
         //public event DownloadProgressChangedEventHandler WDownloadProgressChanged;
+#pragma warning disable CS0067 // El evento 'PortableWebDownload.PropertyChanged' nunca se usa
         public event PropertyChangedEventHandler PropertyChanged;
+#pragma warning restore CS0067 // El evento 'PortableWebDownload.PropertyChanged' nunca se usa
+#pragma warning disable CS0067 // El evento 'PortableWebDownload.WebDownloadProgressChanged' nunca se usa
         public event ProgressChangedEventHandler WebDownloadProgressChanged;
+#pragma warning restore CS0067 // El evento 'PortableWebDownload.WebDownloadProgressChanged' nunca se usa
 
         HttpDownload dw;
 

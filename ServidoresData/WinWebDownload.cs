@@ -41,7 +41,9 @@ namespace ServidoresData
         
 
         public event AsyncCompletedEventHandler DownloadFileCompleted;
+#pragma warning disable CS0067 // El evento 'WinWebDownload.DownloadProgressChanged' nunca se usa
         public event PortableDownloadProgressChangedEventHandler DownloadProgressChanged;
+#pragma warning restore CS0067 // El evento 'WinWebDownload.DownloadProgressChanged' nunca se usa
         public event ProgressChangedEventHandler WebDownloadProgressChanged;
 
         DownloadAsyncProgressChangedEventArgs e;
