@@ -22,8 +22,7 @@ namespace ServerManagementClient
         List<RepositoryProxy> repolight;
         private string webrepository = "http://188.165.254.137/WebRepo";
 
-        string nombre;
-
+        
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
         public Repositories()

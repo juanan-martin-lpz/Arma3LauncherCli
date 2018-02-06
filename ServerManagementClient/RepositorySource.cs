@@ -75,7 +75,7 @@ namespace ServerManagementClient
             }
             catch (Exception e)
             {
-                throw;
+                throw e;
             }
         }
 

@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.IO;
 using NLog;
 using NLog.Targets;
+using System.Threading;
 
 namespace ServerManagementClient
 {
@@ -23,6 +24,8 @@ namespace ServerManagementClient
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
+        CancellationToken _token;
+
         public HttpClientDownload(string downloadUrl, string destinationFilePath)
         {
             FileTarget target = LogManager.Configuration.FindTargetByName<FileTarget>("logfile");
@@ -33,6 +36,11 @@ namespace ServerManagementClient
 
             _downloadUrl = downloadUrl;
             _destinationFilePath = destinationFilePath;
+        }
+
+        public async Task CancelDownload(CancellationToken token)
+        {
+            await Task.Factory.StartNew(() => { _token = token; } );       
         }
 
         public async Task StartDownload()
@@ -67,6 +75,11 @@ namespace ServerManagementClient
             {
                 do
                 {
+                    if (_token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     var bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length);
                     if (bytesRead == 0)
                     {
