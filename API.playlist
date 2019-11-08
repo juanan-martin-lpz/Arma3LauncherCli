@@ -1,1 +1,0 @@
-<Playlist Version="1.0"><Add Test="ServerWebManager.Tests.Logins.TestConnect" /><Add Test="ServerWebManager.Tests.Logins.GetAuthToken" /><Add Test="ServerWebManager.Tests.Logins.Dashboard" /><Add Test="ServerWebManager.Tests.Servers.GetAllServers" /></Playlist>
