@@ -1,13 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2024
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29319.158
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "12bdi_launcher", "ActualizaBDD\12bdi_launcher.csproj", "{A2D7EFDF-3D98-4E62-82A4-CF3B26B5011D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arma3LauncherCli", "ActualizaBDD\Arma3LauncherCli.csproj", "{A2D7EFDF-3D98-4E62-82A4-CF3B26B5011D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerManagementClient", "ServerManagementClient\ServerManagementClient.csproj", "{99ACC73F-5918-45B4-AD63-42E2F1558373}"
-EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup12BDI", "Setup12BDI\Setup12BDI.vdproj", "{B2A19BFF-F1C4-478B-9A03-0783A4FE148A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,12 +41,6 @@ Global
 		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Release|x86.ActiveCfg = Release|Any CPU
 		{99ACC73F-5918-45B4-AD63-42E2F1558373}.Release|x86.Build.0 = Release|Any CPU
-		{B2A19BFF-F1C4-478B-9A03-0783A4FE148A}.Debug|Any CPU.ActiveCfg = Debug
-		{B2A19BFF-F1C4-478B-9A03-0783A4FE148A}.Debug|Mixed Platforms.ActiveCfg = Debug
-		{B2A19BFF-F1C4-478B-9A03-0783A4FE148A}.Debug|x86.ActiveCfg = Debug
-		{B2A19BFF-F1C4-478B-9A03-0783A4FE148A}.Release|Any CPU.ActiveCfg = Release
-		{B2A19BFF-F1C4-478B-9A03-0783A4FE148A}.Release|Mixed Platforms.ActiveCfg = Release
-		{B2A19BFF-F1C4-478B-9A03-0783A4FE148A}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

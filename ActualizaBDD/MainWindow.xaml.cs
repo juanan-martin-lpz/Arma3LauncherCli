@@ -17,7 +17,15 @@ using NLog.Targets;
 using Newtonsoft.Json;
 using System.Windows.Controls;
 using ServerManagementClient;
-
+using System.Net.Http;
+using System.Net;
+using System.Collections;
+using FastRsync.Core;
+using FastRsync.Delta;
+using FastRsync.Hash;
+using FastRsync.Signature;
+using FastRsync.Diagnostics;
+using System.Runtime.Serialization.Formatters.Binary;
 
 /*************************************************************************************************************************************************
  * 
@@ -950,9 +958,11 @@ namespace ActualizaBDD
                 await ProcessUpdate(db_name, proxy, carpeta_juego).ContinueWith((result) => {
                     resetEstado("Terminado");
                     encender_botones();
+                    logger.Info("Fin del proceso de actualizacion NG");
+
                 });
 
-            }, token, TaskCreationOptions.PreferFairness, context);
+            }, token, TaskCreationOptions.None, context);
 
             #endregion
 
@@ -1271,21 +1281,24 @@ namespace ActualizaBDD
                     // check signature
                     actualizaSubEstado($"Chequeando {filename}");
 
-                    string file_hash = await compute_hash.ComputeHashAsync(filename);
+                    //string file_hash = await compute_hash.ComputeHashAsync(filename);
 
                     actualizaSubEstado($"Chequeado...");
 
                     int nretries = 1;
-                    bool canContinue = false;
+                    //bool canContinue = false;
 
-                    while (!canContinue)
-                    {
+                    //while (!canContinue)
+                    //{
                         //Task.WaitAll();
+                        System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
+                        TimeSpan ellapsed;
 
-                        if (file_hash != mod.Firma)
-                        {
+                        //if (file_hash != mod.Firma)
+                        //{
                             string f = $"{webrepository}/{p.Nombre}/{mod.Ruta}/{mod.Nombre}";
 
+                            /*
                             actualizaSubEstado($"Nueva version de {mod.Nombre} encontrada. Descargando");
 
                             logger.Warn($"La replica de {f} en el equipo no tiene la misma firma que en el servidor");
@@ -1311,7 +1324,143 @@ namespace ActualizaBDD
                                 globalRetries++;
                             }
 
-                            canContinue = true;
+                            */
+
+                            // Informamos
+                            actualizaSubEstado($"Archivo diferente en cliente: Generando Delta");
+                            logger.Warn("Archivo diferente en cliente: Generando Delta");
+
+                            string basisFilePath = filename;
+                            string signatureFilePath = filename + @".sig";
+                            string modfile = filename;
+                            string deltaFilePath = filename + @".delta";
+                            string newFilePath = filename + @".new";
+
+                            var signatureBuilder = new SignatureBuilder();
+
+                            using (var basisStream = new FileStream(basisFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            using (var signatureStream = new FileStream(signatureFilePath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                            {
+                                actualizaSubEstado($"Generando Signature para ${Path.GetFileName(basisFilePath)}");
+                                logger.Warn("Generando Signature para " + Path.GetFileName(basisFilePath));
+
+                                watch.Start();
+                                signatureBuilder.Build(basisStream, new SignatureWriter(signatureStream));
+                                watch.Stop();
+
+                                ellapsed = watch.Elapsed;
+                                logger.Warn("Signature generada en " + ellapsed.Minutes + ":" + ellapsed.Seconds + ":" + ellapsed.Milliseconds);
+
+                            }
+
+                            ConsoleProgressReporter reporter = new ConsoleProgressReporter();
+
+                            using (var signatureStream = new FileStream(signatureFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            {
+                                actualizaSubEstado($"Enviando Signature para ${Path.GetFileName(basisFilePath)}");
+                                logger.Warn("Enviando Signature para " + Path.GetFileName(basisFilePath));
+
+                                byte[] bArray = new byte[signatureStream.Length];
+                                signatureStream.Read(bArray, 0, (int)signatureStream.Length);
+
+                                // Generate post objects
+
+                                string n = p.Nombre; //.Replace("\\", "");
+                                string r = mod.Ruta; //.Replace("\\", "");
+                                string no = mod.Nombre; //.Replace("\\", "");
+                                string format = Path.GetExtension(filename).Replace(".", "");
+
+                                modfile = $"{n}\\{r}\\{no}";
+
+                                Dictionary<string, object> postParameters = new Dictionary<string, object>();
+                                postParameters.Add("filename", modfile);
+                                postParameters.Add("fileformat", format);
+                                postParameters.Add("file", new FormUpload.FileParameter(bArray, modfile, "application/octet-stream"));
+
+                                string postURL = "http://188.165.254.137/deltaapp/api/delta/getdelta";
+                                string userAgent = "Launcher";
+
+                                actualizaSubEstado($"Esperando respuesta para ${Path.GetFileName(basisFilePath)}");
+                                logger.Warn("Esperando respuesta para " + Path.GetFileName(basisFilePath));
+
+                                watch.Reset();
+                                watch.Start();
+                                HttpWebResponse webResponse = FormUpload.MultipartFormDataPost(postURL, userAgent, postParameters);
+                                watch.Stop();
+
+                                ellapsed = watch.Elapsed;
+                                logger.Warn("Delta descargado en " + ellapsed.Minutes + ":" + ellapsed.Seconds + ":" + ellapsed.Milliseconds);
+
+                                // Process response
+                                actualizaSubEstado($"Respuesta recibida para ${Path.GetFileName(basisFilePath)}");
+                                logger.Warn("Respuesta recibida para " + Path.GetFileName(basisFilePath));
+
+                                var responseReader = webResponse.GetResponseStream();
+
+                                int bytesProcessed = 0;
+
+                                actualizaSubEstado($"Escribiendo Delta para ${Path.GetFileName(basisFilePath)}");
+                                logger.Warn("Escribiendo Delta para " + Path.GetFileName(basisFilePath));
+
+                                using (var streamDeltaWriter = new FileStream(deltaFilePath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                                {
+                                    // Allocate a 1k buffer
+                                    byte[] buffer = new byte[1024];
+                                    int bytesRead;
+
+                                    // Simple do/while loop to read from stream until
+                                    // no bytes are returned
+                                    do
+                                    {
+                                        // Read data (up to 1k) from the stream
+                                        bytesRead = responseReader.Read(buffer, 0, buffer.Length);
+
+                                        // Write the data to the local file
+                                        streamDeltaWriter.Write(buffer, 0, bytesRead);
+
+                                        // Increment total bytes processed
+                                        bytesProcessed += bytesRead;
+                                    } while (bytesRead > 0);
+                                }
+
+                                webResponse.Close();
+
+                                var delta = new DeltaApplier
+                                {
+                                    SkipHashCheck = true
+                                };
+                                using (var basisStream = new FileStream(basisFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                                using (var deltaStream = new FileStream(deltaFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                                using (var newFileStream = new FileStream(newFilePath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read))
+                                {
+                                    actualizaSubEstado($"Aplicando Delta para ${Path.GetFileName(basisFilePath)}");
+                                    logger.Warn("Aplicando Delta para " + Path.GetFileName(basisFilePath));
+
+                                    watch.Reset();
+                                    watch.Start();
+                                    delta.Apply(basisStream, new BinaryDeltaReader(deltaStream, reporter), newFileStream);
+                                    watch.Stop();
+
+                                    ellapsed = watch.Elapsed;
+                                    logger.Warn("Delta aplicado en " + ellapsed.Minutes + ":" + ellapsed.Seconds + ":" + ellapsed.Milliseconds);
+
+                                }
+                            }
+
+                            actualizaSubEstado($"Eliminando temporales para ${Path.GetFileName(basisFilePath)}");
+                            logger.Warn("Eliminando temporales para " + Path.GetFileName(basisFilePath));
+
+                            File.Delete(basisFilePath);
+                            File.Delete(signatureFilePath);
+                            File.Move(newFilePath, basisFilePath);
+                            File.Delete(deltaFilePath);
+
+                            actualizaSubEstado($"{mod.Nombre} esta OK");
+
+                            await Task.Delay(500);
+
+                            //canContinue = true;
+                        /*
                         }
                         else
                         {
@@ -1319,7 +1468,9 @@ namespace ActualizaBDD
 
                             canContinue = true;
                         }
-                    }
+                        */
+                        
+                    //}
                 }
                 else
                 {

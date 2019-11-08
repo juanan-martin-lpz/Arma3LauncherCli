@@ -114,6 +114,9 @@
     <Reference Include="EdgeJs, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Edge.js.8.2.1\lib\net40\EdgeJs.dll</HintPath>
     </Reference>
+    <Reference Include="FastRsync, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\FastRsyncNet.2.0.0\lib\net45\FastRsync.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="NAudio">
       <HintPath>..\NAudio.dll</HintPath>
@@ -144,6 +147,8 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Deployment" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http.WebRequest" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -166,6 +171,7 @@
     <Compile Include="Configuracion.cs" />
     <Compile Include="Diagnosticos.cs" />
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="FormUpload.cs" />
     <Compile Include="ReposBorrar.xaml.cs">
       <DependentUpon>ReposBorrar.xaml</DependentUpon>
     </Compile>
