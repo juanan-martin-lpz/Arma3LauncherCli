@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using ServerManagementClient;
 
-namespace ActualizaBDD
+namespace ArmaLauncherCli
 {
     public class ServidoresList
     {

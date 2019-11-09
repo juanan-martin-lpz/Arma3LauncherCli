@@ -19,7 +19,6 @@ namespace ServerManagementClient
     {
 
         string arma;
-        DateTime fecha;
         string nombre;
         string puerto;
         string ip;

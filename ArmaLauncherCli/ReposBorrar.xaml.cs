@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using ServerManagementClient;
 
-namespace ActualizaBDD
+namespace ArmaLauncherCli
 {
     /// <summary>
     /// Lógica de interacción para ReposBorrar.xaml

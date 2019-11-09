@@ -104,9 +104,9 @@ namespace ServerManagementClient
 
                 hash = firma_base64;
             }
-            catch (Exception x)
+            catch
             {
-                throw x;
+                throw;
             }
         }
     }

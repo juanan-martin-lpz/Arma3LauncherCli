@@ -3,14 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-using ActualizaBDD.Properties;
+using Arma3LauncherCli.Properties;
 using System.Windows;
 
-namespace ActualizaBDD
+namespace ArmaLauncherCli
 {
     static public class Configuracion
     {
         // Hacemos una comproboación rápida de los valores de configuración
+
+        public static string ServerURL;
+        public static string ServerIP;
+
+        /*
         static public string comprobacion_inicial(MainWindow w)
         {
             bool arma2_encontrado = false;
@@ -49,6 +54,7 @@ namespace ActualizaBDD
 
             return mensaje;
         }
+        */
 
         // Cargamos configuración en los controles
         static public void cargar_configuracion(MainWindow w)
@@ -76,6 +82,21 @@ namespace ActualizaBDD
                 w.btn_mods_arma2.IsEnabled = true;
             }
 
+            w.txtIP.Text = Settings.Default.serverIP;
+            w.txtPort.Text = Settings.Default.serverPort;
+            w.txtUrl.Text = Settings.Default.serverUrl;
+
+            ServerIP = Settings.Default.serverIP;
+
+            if (Settings.Default.serverPort != "")
+            {
+                ServerURL = Settings.Default.serverIP +  "/" + Settings.Default.serverUrl;
+            }
+            else
+            {
+                ServerURL = Settings.Default.serverIP + ":" + Settings.Default.serverPort + "/" + Settings.Default.serverUrl;
+            }
+
 
         }
 
@@ -97,6 +118,10 @@ namespace ActualizaBDD
                 Settings.Default.mods_a2 = w.txtUserDefined.Text;
                 Settings.Default.mods_a3 = w.txtUserDefined.Text;
             }
+
+            Settings.Default.serverIP = w.txtIP.Text;
+            Settings.Default.serverPort = w.txtPort.Text;
+            Settings.Default.serverUrl = w.txtUrl.Text;
 
             Settings.Default.Save();
         }

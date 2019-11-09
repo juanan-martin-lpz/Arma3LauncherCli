@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 using ServerManagementClient;
 using System.IO;
 
-namespace ActualizaBDD
+namespace ArmaLauncherCli
 {
     /// <summary>
     /// Lógica de interacción para xpresslauncher.xaml

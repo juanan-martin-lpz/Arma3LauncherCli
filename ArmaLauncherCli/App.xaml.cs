@@ -5,7 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Windows;
 
-namespace ActualizaBDD
+namespace ArmaLauncherCli
 {
     /// <summary>
     /// Lógica de interacción para App.xaml

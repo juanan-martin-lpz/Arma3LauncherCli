@@ -6,7 +6,7 @@ using NAudio.Wave;
 using System.ComponentModel;
 using System.Net.NetworkInformation;
 
-namespace ActualizaBDD
+namespace ArmaLauncherCli
 {
     // Clase para comprobar que ciertas cosas "de cajon" estan bien configuradas
     //

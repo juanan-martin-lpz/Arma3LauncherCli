@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using ActualizaBDD.Properties;
+using Arma3LauncherCli.Properties;
 using System.IO;
 using System.ComponentModel;
 //using Microsoft.VisualBasic;
@@ -36,7 +36,7 @@ using System.Runtime.Serialization.Formatters.Binary;
  *      
  * ***********************************************************************************************************************************************/
 
-namespace ActualizaBDD
+namespace ArmaLauncherCli
 {
     /// <summary>
     /// Lógica de interacción para MainWindow.xaml
@@ -47,7 +47,6 @@ namespace ActualizaBDD
     {
         SynchronizationContext synchronizationContext;
 
-        internal string servidor_12bdi = "188.165.254.137";
         private System.Windows.Media.Brush btnBrush;
 
         RepositorySource source;
@@ -55,7 +54,7 @@ namespace ActualizaBDD
         ServidoresList servers;
         List<ModView> mods;
 
-        private string webrepository = "http://188.165.254.137/WebRepo";
+        private string webrepository;
 
         RepositoryBay bay;
 
@@ -68,7 +67,6 @@ namespace ActualizaBDD
         Diagnosticos diag;
 
 
-        string db_name;
         Servidor serv;
 
         RepositoryProxy proxy;
@@ -105,26 +103,9 @@ namespace ActualizaBDD
             // Versión
             this.Title = "12BDI Lanzador V. ";
 
-            if (System.Deployment.Application.ApplicationDeployment.IsNetworkDeployed)
-            {
-                this.Title += "" + System.Deployment.Application.ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString();
-                solapa_administracion.IsEnabled = false;
-
-                logger.Info("Version : {0}", System.Deployment.Application.ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString());
-                logger.Info("");
-
-            }
-            else
-            {
-                this.Title += "desarrollo";
-                solapa_administracion.IsEnabled = true;
-
-                logger.Info("Version : {0}", "Desarrollo");
-                logger.Info("");
-
-            }
-
             Configuracion.cargar_configuracion(this);
+
+            webrepository = Configuracion.ServerURL;
 
             logger.Info("=================================================================================");
             logger.Info("Configuracion");
@@ -264,8 +245,6 @@ namespace ActualizaBDD
         private void encender_botones()
         {
             btnSalir.IsEnabled = true;
-            btn_crear_repositorio_a2.IsEnabled = true;
-            btn_crear_repositorio_a3.IsEnabled = true;
             btn_guardar_configuracion.IsEnabled = true;
             btn_restablecer_configuracion.IsEnabled = true;
             btn_carpeta_arma2.IsEnabled = true;
@@ -276,7 +255,6 @@ namespace ActualizaBDD
             btn_volcar_configuracion.IsEnabled = true;
             //btn_comprobar_addons_a3_minimal.IsEnabled = true;
 
-            btn_catalogo_seguro.IsEnabled = true;
             //pluginsACRE.IsEnabled = true;
             //pluginsTFAR.IsEnabled = true;
             btnReloadAdmin.IsEnabled = true;
@@ -292,8 +270,6 @@ namespace ActualizaBDD
         private void apagar_botones()
         {
             btnSalir.IsEnabled = false;
-            btn_crear_repositorio_a2.IsEnabled = false;
-            btn_crear_repositorio_a3.IsEnabled = false;
             btn_guardar_configuracion.IsEnabled = false;
             btn_restablecer_configuracion.IsEnabled = false;
             btn_carpeta_arma2.IsEnabled = false;
@@ -304,7 +280,6 @@ namespace ActualizaBDD
             //btn_ejecutar_aceclippi.IsEnabled = false;
             btn_volcar_configuracion.IsEnabled = false;
 
-            btn_catalogo_seguro.IsEnabled = false;
             //pluginsACRE.IsEnabled = false;
             //pluginsTFAR.IsEnabled = false;
 
@@ -382,249 +357,7 @@ namespace ActualizaBDD
             t1.Start();
         }
 
-        private async Task<bool> GenerateRepositories()
-        {
 
-            Dictionary<String, String> modlist = new Dictionary<string, string>();
-
-            List<RepositoryProxy> repolist = new List<RepositoryProxy>();
-
-            IFileHash compute_hash = new FileHashXXHash();
-
-            string carpeta_entrada = tb_carpeta_base_arma3.Text;
-
-            string[] dirs = Directory.GetDirectories(carpeta_entrada);
-
-            int count = dirs.Count();
-            int current = 0;
-
-            List<string> lineas = new List<string>();
-
-            actualizaEstado($"Generando (0/{count}");
-
-            foreach (string repo in dirs)
-            {
-                ObservableCollection<DBData> dcliente = new ObservableCollection<DBData>();
-
-                string reponame = Path.GetFileName(repo);
-
-                RepositoryProxy rproxy = new RepositoryProxy();
-
-                rproxy.Nombre = reponame;
-
-                DirectoryInfo basedir = new DirectoryInfo(repo);
-
-                current++;
-
-                actualizaEstado($"Generando {reponame} ({current}/{count}");
-
-                var flist = from d in basedir.GetDirectories() where d.FullName.Contains("@") select d;
-
-                int modcount = flist.Count();
-                int modcurrent = 0;
-
-                // Procesamos cada fichero
-                foreach (DirectoryInfo fol in flist)
-                {
-
-                    modcurrent++;
-
-                    actualizaSubEstado($"Procesando {fol.Name} ({modcurrent}/{modcount})");
-
-                    actualizaProgreso((modcurrent * 100) / modcount);
-
-                    Mod m = new Mod(fol.FullName);
-                    m.Nombre = Path.GetFileName(fol.Name);
-                    m.RelativePath = fol.FullName.Replace(Path.GetFullPath(basedir.FullName), "");
-
-                    rproxy.Mods.Add(new ModProxy() { Nombre = m.Nombre, Icon = null });
-
-                    if (!modlist.ContainsKey(m.Nombre))
-                    {
-                        modlist.Add(m.Nombre, m.Nombre);
-                    }
-
-                    List<FileInfo> files = fol.EnumerateFiles("*", SearchOption.AllDirectories).ToList<FileInfo>();
-
-                    int totalfiles = files.Count();
-                    int totalprogress = 0;
-
-                    foreach (FileInfo fichero in files)
-                    {
-
-                        totalprogress++;
-
-                        var exist = from d in dcliente where d.Ruta == (Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), "")) && d.Nombre == fichero.Name && d.Tamano == fichero.Length select d;
-
-
-                        if (exist.Count() == 0)
-                        {
-                            try
-                            {
-                                DBData data = new DBData();
-
-                                data.Ruta = Path.GetDirectoryName(fichero.FullName).Replace(Path.GetFullPath(basedir.FullName), "");
-                                data.Nombre = fichero.Name;
-
-                                actualizaSubEstado($"Calculando firma para {data.Nombre}");
-
-                                data.Firma = compute_hash.ComputeHash(fichero.FullName);
-                                data.Mod = m.Nombre;
-                                data.Tamano = fichero.Length;
-
-                                dcliente.Add(data);
-
-                            }
-                            catch (Exception ex)
-                            {
-                                logger.Fatal("Error al insertar un registro en el catalogo del repositorio : {0}", ex.Message);
-                                logger.Fatal("================> Mod : {0}", m.Nombre);
-                                logger.Fatal("================> Fichero : {0}", fichero.FullName);
-
-                                throw ex;
-                            }
-                        }
-                    }
-
-                    // Escribimos el fichero json
-                    if (File.Exists(basedir.FullName + @"\ficheros.json"))
-                    {
-                        File.Delete(basedir.FullName + @"\ficheros.json");
-                    }
-
-                    actualizaSubEstado("Escribiendo ficheros.json");
-
-                    File.WriteAllText(basedir.FullName + @"\ficheros.json", JsonConvert.SerializeObject(dcliente));
-
-                }
-
-                // Anadimos el repo a la lista
-                repolist.Add(rproxy);
-
-            }
-
-            foreach (string mod in modlist.Keys)
-            {
-                lineas.Add($"3|{mod}");
-            }
-
-            File.WriteAllLines(Path.Combine(carpeta_entrada, "modlist.txt"), lineas.ToArray());
-
-            // Escribimos el fichero json
-            if (File.Exists(carpeta_entrada + @"\repositories.json"))
-            {
-                File.Delete(carpeta_entrada + @"\repositories.json");
-            }
-
-            actualizaSubEstado("Escribiendo repositories.json");
-
-            File.WriteAllText(carpeta_entrada + @"\repositories.json", JsonConvert.SerializeObject(repolist));
-
-            return true;
-        }
-
-        private void btn_crear_repositorio_a3_Click(object sender, RoutedEventArgs e)
-        {
-            synchronizationContext = SynchronizationContext.Current;
-
-
-            GenerateRepositories().ContinueWith((result) =>
-            {
-                resetEstado("Terminado");
-            });
-
-            #region "OldCode"
-
-            /*
-            apagar_botones();
-
-            //log("Generando repositorio: ");
-
-            string carpeta_entrada = tb_carpeta_base_arma3.Text;
-            string carpeta_salida = tb_carpeta_repositorio.Text;
-            //string repositorio = txtRepo.Text;
-            //string repositorio = "";
-
-
-            // Proceso principal
-            Task t1 = new Task(
-            () =>
-            {
-                try
-                {
-                    string[] dirs = Directory.GetDirectories(carpeta_entrada);
-
-                    foreach (string repo in dirs)
-                    {
-                        string reponame = Path.GetFileName(repo);
-
-                        /*
-                        if (!Directory.Exists(targetpath))
-                        {
-                            Directory.CreateDirectory(targetpath);
-                        }
-                        */
-
-            //voidStringDelegate dlog = log;
-
-            //var res = from m in mods where m.Arma == "3" select m.Name;
-            /*
-            re = new Repository(carpeta_entrada, reponame, carpeta_salida, this.mods);
-            re.CreateRepositoryCompleted += new Repository.CreateRepositoryCompletedEventHandler(GenerateRepoCompleted);
-
-            Progress<CatalogModsProgress> prg = new Progress<CatalogModsProgress>();
-
-            if (prg != null)
-            {
-                prg.ProgressChanged += (o, pr) =>
-                {
-                    this.Dispatcher.Invoke(new System.Action(() =>
-                    {
-                        Estado2.Content = "Procesando (" + reponame + ") " + pr.ProgressMod.ToString() + @"/" + pr.TotalMods.ToString();
-                        SubEstado2.Content = pr.Mod;
-                        progreso2.Value = pr.Progress;
-                    }));
-
-                };
-            }
-
-            re.CatalogRepository(prg);
-
-        }
-
-        //
-        /*
-        string[] dirs = Directory.GetDirectories(carpeta_entrada);
-
-        var res = from d in dirs where d.Contains("@") select new DirectoryInfo(d).Name;
-        string[] totalmods = res.ToArray<string>();
-
-        Repositorio r = new Repositorio(this, totalmods,webrepository,carpeta_salida);
-
-        r.crear(carpeta_entrada, carpeta_salida);
-        */
-            /*
-        }
-        catch (Exception x)
-        {
-            System.Windows.MessageBox.Show(x.Message, x.Source, MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    });
-
-    // Cuando termine el proceso...
-    Task t_final = t1.ContinueWith(
-    ant =>
-    {
-
-        encender_botones();
-    }, TaskScheduler.FromCurrentSynchronizationContext());
-
-    // Arrancamos la tarea inicial
-    t1.Start();
-
-    */
-            #endregion
-        }
 
         /* OBSOLETO
         private void GenerateRepoCompleted(object sender, Repository.CatalogoCompletedEventArgs e)
@@ -709,7 +442,7 @@ namespace ActualizaBDD
                 Test_Red.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Lavender);
 
 
-                if (diag.ping_servidor12bdi(servidor_12bdi, 3, 100))
+                if (diag.ping_servidor12bdi(Configuracion.ServerIP, 3, 100))
                 {
                     Test_Red.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.LightYellow);
 
@@ -757,78 +490,7 @@ namespace ActualizaBDD
             //launcher.Show();
         }
 
-        private void btn_gen_repositorio_a2_Click(object sender, RoutedEventArgs e)
-        {
 
-            string carpeta_entrada = tb_carpeta_base_arma3.Text;
-
-            List<RepositoryProxy> reposl = new List<RepositoryProxy>();
-
-            string[] dirs = Directory.GetDirectories(carpeta_entrada);
-
-            DirectoryInfo wrepo = new DirectoryInfo(carpeta_entrada);
-
-            List<string> lines = new List<string>();
-            FileInfo modlist = new FileInfo(carpeta_entrada + @"\modlist.txt");
-
-            if (modlist.Exists) { modlist.Delete(); }
-
-            foreach (DirectoryInfo i in wrepo.GetDirectories())
-            {
-
-                /*
-                FileInfo c = new FileInfo(carpeta_entrada + @"\" + wrepo.Name + @"\timestamp.txt");
-
-                if (c.Exists)
-                {
-                    c.Delete();
-                }
-
-                StreamWriter canario = new StreamWriter(carpeta_entrada + @"\" + i.Name + @"\timestamp.txt");
-
-                //File.Open(carpeta_salida + @"\" + wrepo.Name + @"\timestamp.txt",FileMode.OpenOrCreate);
-
-                long fecha = System.DateTime.Now.ToBinary();
-
-                canario.WriteLine(fecha);
-
-                canario.Close();
-                */
-
-                RepositoryProxy rr = new RepositoryProxy() { Nombre = i.Name };
-                generateModFile(lines, "3", i, rr);
-
-                reposl.Add(rr);
-
-                //File.WriteAllText(carpeta_entrada + @"\repositories.json", JsonConvert.SerializeObject(reposl));
-
-                System.IO.File.WriteAllLines(modlist.FullName, lines);
-
-            }
-        }
-
-        private void generateModFile(List<string> lines, string juego, DirectoryInfo mod, RepositoryProxy rp)
-        {
-
-            var todos = from DirectoryInfo i in mod.GetDirectories() select i;
-
-            List<string> lista = new List<string>();
-
-            foreach (DirectoryInfo r in todos)
-            {
-                if (!lista.Contains(r.Name))
-                {
-                    rp.Mods.Add(new ModProxy() { Nombre = r.Name });
-                    lista.Add(r.Name);
-                }
-            }
-
-            foreach (string l in lista)
-            {
-                string line = juego + "|" + l;
-                lines.Add(line);
-            }
-        }
 
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
@@ -955,7 +617,7 @@ namespace ActualizaBDD
 
             Task t = Task.Factory.StartNew(async () => {
 
-                await ProcessUpdate(db_name, proxy, carpeta_juego).ContinueWith((result) => {
+                await ProcessUpdate(proxy, carpeta_juego).ContinueWith((result) => {
                     resetEstado("Terminado");
                     encender_botones();
                     logger.Info("Fin del proceso de actualizacion NG");
@@ -1210,7 +872,7 @@ namespace ActualizaBDD
             return relative;
         }
 
-        private async Task<bool> ProcessUpdate(string db_name, RepositoryProxy p, string targetFolder)
+        private async Task<bool> ProcessUpdate(RepositoryProxy p, string targetFolder)
         {
             resetEstado("Iniciando...");
 
@@ -1285,7 +947,6 @@ namespace ActualizaBDD
 
                     actualizaSubEstado($"Chequeado...");
 
-                    int nretries = 1;
                     //bool canContinue = false;
 
                     //while (!canContinue)
@@ -1571,7 +1232,7 @@ namespace ActualizaBDD
                             {
                                 Directory.Delete(dir, true);
                             }
-                            catch (Exception e)
+                            catch
                             {
                                 throw;
                             }
@@ -1932,7 +1593,7 @@ namespace ActualizaBDD
                     Directory.CreateDirectory(carpeta_juego);
                 }
 
-                Task t = Task.Factory.StartNew(async () => {await ProcessUpdate(db_name, proxy, carpeta_juego);}, token, TaskCreationOptions.PreferFairness, context);
+                Task t = Task.Factory.StartNew(async () => {await ProcessUpdate(proxy, carpeta_juego);}, token, TaskCreationOptions.PreferFairness, context);
 
                 await t.ContinueWith((result) => { resetEstado("Mod " + proxy.Nombre + " terminado"); });
             }

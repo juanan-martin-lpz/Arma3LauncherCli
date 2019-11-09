@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ActualizaBDD
+namespace ArmaLauncherCli
 {
     public static class ExtensionMethods
     {

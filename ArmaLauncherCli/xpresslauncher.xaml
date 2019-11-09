@@ -1,4 +1,4 @@
-﻿<Window x:Class="ActualizaBDD.xpresslauncher"
+﻿<Window x:Class="ArmaLauncherCli.xpresslauncher"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="xpresslauncher" Height="522.92" Width="616">

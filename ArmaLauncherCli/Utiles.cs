@@ -9,7 +9,7 @@ using System.Security.Cryptography;
 using System.Diagnostics;
 using System.Data.HashFunction;
 
-namespace ActualizaBDD
+namespace ArmaLauncherCli
 {
     static class Utiles
     {
@@ -158,6 +158,8 @@ namespace ActualizaBDD
         }
 
         */
+
+        /*
         internal static string calcula_firma_MD5(string fichero)
         {
             try
@@ -184,7 +186,8 @@ namespace ActualizaBDD
             }
         }
 
-        
+        */
+
         static public void ejecuta_proceso(string orden, string parametros, string dir_trabajo, bool shex = false)
         {
 
